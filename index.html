@@ -14,13 +14,12 @@
         select, input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
         .price-box { background: #f8fff9; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0; border: 2px dashed #28a745; }
         #totalPrice { font-size: 32px; color: #28a745; font-weight: bold; }
-        .payment-info { background: #fff3cd; padding: 15px; border-radius: 10px; border: 1px solid #ffeeba; margin-bottom: 20px; display: none; }
+        .payment-info { background: #fff3cd; padding: 15px; border-radius: 10px; border: 1px solid #ffeeba; margin-bottom: 20px; }
         .bank-details { font-size: 18px; font-weight: bold; color: #856404; text-align: center; line-height: 1.6; }
-        #slipSection { display: none; } /* ซ่อนส่วนแนบสลิปไว้ก่อน */
+        #slipSection { display: none; }
         button { width: 100%; padding: 16px; background: #28a745; color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #218838; }
+        button:disabled { background: #ccc; }
         .btn-secondary { background: #6c757d; margin-top: 10px; }
-        small { color: #666; font-size: 12px; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -42,18 +41,18 @@
             <div class="form-group">
                 <label id="qtyLabel">4. ระบุจำนวน</label>
                 <input type="number" id="quantity" oninput="calculatePrice()" placeholder="ระบุจำนวน" step="1" inputmode="numeric">
-                <small id="limitNote">กรุณาเลือกบริการ</small>
+                <small id="limitNote" style="display:block; color:#666; margin-top:5px;">กรุณาเลือกบริการ</small>
             </div>
             <div class="price-box">
                 <span style="color: #666;">ยอดที่ต้องชำระ</span><br>
                 <span id="totalPrice">0.00</span> บาท
             </div>
-            <button onclick="goToPayment()">ชำระเงินเลยสัส!</button>
+            <button onclick="goToPayment()">ไปหน้าชำระเงิน</button>
         </div>
 
         <div id="slipSection">
             <h2>💸 ชำระเงิน</h2>
-            <div class="payment-info" id="paymentInfo" style="display: block;">
+            <div class="payment-info">
                 <div class="bank-details">
                     กสิกรไทย (K-Bank)<br>
                     เลขบัญชี: <span style="color: #d9534f;">123-4-56789-0</span><br>
@@ -67,14 +66,21 @@
                 <label>แนบสลิปเพื่อยืนยัน</label>
                 <input type="file" id="slipFile" accept="image/*">
             </div>
-            <button onclick="submitOrder()">ยืนยันแจ้งโอน</button>
+            <button id="submitBtn" onclick="submitOrder()">ส่งข้อมูลแจ้งโอน</button>
             <button class="btn-secondary" onclick="backToOrder()">ย้อนกลับไปแก้ไข</button>
         </div>
     </div>
 
     <script>
+        // --- ส่วนที่มึงต้องแก้เอง ---
         const LIFF_ID = "2009857155-P69Z9Mo9"; 
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
+        
+        // 👇 บรรทัดนี้แหละสัสปอนด์!!! เอาลิงก์จาก Make มาใส่แทนในฟันหนูซะ!
+        const webhookUrl = "https://hook.eu1.make.com/33xiev8snwr1r8slk4oa3cb5843m47ql"; 
+        
+        // -----------------------
+
         let allServices = [];
 
         async function initLIFF() {
@@ -130,18 +136,9 @@
 
         function goToPayment() {
             const sid = document.getElementById('serviceSelect').value;
-            const qtyInput = document.getElementById('quantity').value;
-            const qty = Number(qtyInput);
-            const link = document.getElementById('targetLink').value;
-            const service = allServices.find(s => s.id == sid);
-
-            // แจ้งเตือนแบบละเอียด
-            if (!sid) return alert("❌ มึงยังไม่ได้เลือกบริการเลยสัส!");
-            if (!link.trim()) return alert("❌ วางลิงก์งานด้วย เดี๋ยวบอทไปไม่ถูก!");
-            if (!qtyInput || qtyInput.includes('.')) return alert("❌ กรุณากรอกจำนวนเป็นเลขจำนวนเต็ม (ห้ามมีจุด)!");
-            if (qty < service.min || qty > service.max) return alert(`❌ จำนวนไม่ถูกต้อง! ต้องอยู่ระหว่าง ${service.min} ถึง ${service.max}`);
-
-            // สลับหน้า
+            if (!sid || !document.getElementById('targetLink').value.trim() || !document.getElementById('quantity').value) {
+                return alert("❌ กรอกข้อมูลให้ครบก่อนสัส!");
+            }
             document.getElementById('orderSection').style.display = 'none';
             document.getElementById('slipSection').style.display = 'block';
         }
@@ -151,10 +148,45 @@
             document.getElementById('slipSection').style.display = 'none';
         }
 
-        function submitOrder() {
+        async function submitOrder() {
             const slip = document.getElementById('slipFile').files[0];
-            if (!slip) return alert("❌ แปะสลิปด้วยสัส โอนแล้วก็แนบมา!");
-            alert("✅ สลิปเข้าแล้ว! เดี๋ยวไปเจอกันที่ Make.com ใน Phase 3 สัส!");
+            if (!slip) return alert("❌ แนบสลิปด้วยสัส!");
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "กำลังส่งข้อมูล...";
+
+            const sid = document.getElementById('serviceSelect').value;
+            const service = allServices.find(s => s.id == sid);
+            const qty = document.getElementById('quantity').value;
+            const link = document.getElementById('targetLink').value;
+
+            const reader = new FileReader();
+            reader.readAsDataURL(slip);
+            reader.onload = async () => {
+                const base64Slip = reader.result.split(',')[1];
+                const data = {
+                    platform: service.platform,
+                    service_name: service.name,
+                    quantity: qty,
+                    link: link,
+                    total_price: (qty * service.price).toFixed(2),
+                    slip_image: base64Slip
+                };
+
+                try {
+                    await fetch(webhookUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data)
+                    });
+                    alert("✅ ส่งข้อมูลสำเร็จ! ปิดหน้าต่างได้เลย");
+                    liff.closeWindow();
+                } catch (err) {
+                    alert("❌ พัง: " + err.message);
+                    submitBtn.disabled = false;
+                }
+            };
         }
 
         initLIFF();
