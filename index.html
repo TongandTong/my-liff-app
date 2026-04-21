@@ -7,7 +7,7 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: 'Helvetica', sans-serif; padding: 20px; background-color: #f8f9fa; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
         h2 { color: #28a745; text-align: center; }
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
@@ -20,35 +20,29 @@
 <body>
     <div class="card">
         <h2>🛍️ สั่งซื้อบริการ</h2>
-        
         <div class="form-group">
             <label>เลือกบริการ</label>
             <select id="serviceSelect" onchange="updateMinMax()">
                 <option value="">-- กำลังโหลดข้อมูล... --</option>
             </select>
         </div>
-
         <div class="form-group">
             <label>วางลิงก์งาน</label>
             <input type="text" id="targetLink" placeholder="https://www.facebook.com/...">
         </div>
-
         <div class="form-group">
             <label id="qtyLabel">จำนวน</label>
             <input type="number" id="quantity" oninput="calculatePrice()" placeholder="กรอกตัวเลข">
             <small id="limitNote" style="color: #888;"></small>
         </div>
-
         <div class="price-box">
             <span>ยอดชำระสุทธิ</span><br>
             <span id="totalPrice">0</span> บาท
         </div>
-
         <div class="form-group">
             <label>แนบสลิปโอนเงิน</label>
             <input type="file" id="slipFile" accept="image/*">
         </div>
-
         <button onclick="submitOrder()">ยืนยันสั่งซื้อ</button>
     </div>
 
@@ -59,52 +53,44 @@
         let services = [];
 
         async function initLIFF() {
-            await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) { liff.login(); }
-            loadSheetData();
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) { liff.login(); }
+                loadSheetData();
+            } catch (err) { console.error("LIFF Error", err); }
         }
 
         async function loadSheetData() {
             try {
                 const response = await fetch(SHEET_CSV_URL);
                 const data = await response.text();
-                // แก้การแยกบรรทัดให้ฉลาดขึ้น (รองรับทั้ง \n และ \r\n)
                 const rows = data.split(/\r?\n/).slice(1); 
-                
                 const select = document.getElementById('serviceSelect');
                 select.innerHTML = '<option value="">-- เลือกบริการ --</option>';
-                services = []; // ล้างค่าเก่าก่อนโหลดใหม่
+                services = [];
 
-                rows.forEach((row, index) => {
-                    // ใช้ Regex ในการแยกคอมม่า เพื่อป้องกันปัญหาถ้ามีคอมม่าในฟิลด์ (แต่ทางที่ดีห้ามใส่ในชื่อ)
+                rows.forEach(row => {
                     const cols = row.split(',');
-                    
-                    if(cols.length >= 6) { // เช็คว่ามีข้อมูลอย่างน้อย 6 ช่อง
+                    if(cols.length >= 3) { // ขอแค่มี ID, Platform, Name ก็พอ
                         const item = {
-                            id: cols[0].trim(),
-                            platform: cols[1].trim(),
-                            name: cols[2].trim(), // ชื่อบริการช่อง C
-                            min: parseInt(cols[3]),
-                            max: parseInt(cols[4]),
-                            price: parseFloat(cols[5]),
+                            id: cols[0] ? cols[0].trim() : "",
+                            platform: cols[1] ? cols[1].trim() : "",
+                            name: cols[2] ? cols[2].trim() : "",
+                            min: parseInt(cols[3]) || 0,
+                            max: parseInt(cols[4]) || 0,
+                            price: parseFloat(cols[5]) || 0,
                             apiId: cols[6] ? cols[6].trim() : ""
                         };
-                        
-                        if(item.name) { // ถ้ามีชื่อบริการค่อยเพิ่ม
+                        if(item.name !== "") {
                             services.push(item);
                             let opt = document.createElement('option');
                             opt.value = item.id;
-                            // โชว์ทั้ง Platform และชื่อบริการให้ลูกค้าเห็นชัดๆ
                             opt.innerHTML = `[${item.platform}] ${item.name}`;
                             select.appendChild(opt);
                         }
                     }
                 });
-                console.log("โหลดข้อมูลสำเร็จ:", services.length, "รายการ");
-            } catch (error) {
-                console.error("โหลดข้อมูลพลาด:", error);
-                alert("โหลดข้อมูลไม่สำเร็จ กรุณาเช็คอินเทอร์เน็ต หรือสถานะการแชร์ Sheet");
-            }
+            } catch (error) { alert("โหลดข้อมูลไม่สำเร็จ เช็คการแชร์ Sheet"); }
         }
 
         function updateMinMax() {
@@ -123,15 +109,14 @@
             const qty = document.getElementById('quantity').value;
             const service = services.find(s => s.id == selectedId);
             if (service && qty) {
-                document.getElementById('totalPrice').innerHTML = (qty * service.price).toFixed(2);
+                document.getElementById('totalPrice').innerHTML = (qty * service.price).toLocaleString();
             } else {
                 document.getElementById('totalPrice').innerHTML = "0";
             }
         }
 
         async function submitOrder() {
-            // เดี๋ยว Phase 3 เราจะมาเขียนตรงนี้ให้ส่งไปหา Make.com นะสัส!
-            alert("จารย์บอกว่าใจเย็น! เดี๋ยว Phase 3 เราจะมาเชื่อมระบบส่งข้อมูลกัน");
+            alert("ได้รับข้อมูลแล้ว! เดี๋ยว Phase 3 เราจะส่งข้อมูลไปหา Make กันสัส");
         }
 
         initLIFF();
