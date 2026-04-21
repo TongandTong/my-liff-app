@@ -52,7 +52,7 @@
         <div id="slipSection" style="display: none;">
             <button onclick="backToOrder()" class="text-blue-600 text-sm mb-4">← ย้อนกลับไปแก้ไข</button>
             <h3 class="text-lg font-bold mb-4">💳 สแกนจ่าย & แนบสลิป</h3>
-            
+
             <div class="bg-gray-100 p-4 rounded-lg text-center mb-4">
                 <p class="text-sm text-gray-500">ยอดที่ต้องโอน:</p>
                 <p class="text-xl font-bold text-red-500">฿ <span id="finalAmount">0.00</span></p>
@@ -68,14 +68,14 @@
     </div>
 
     <script>
-        const LIFF_ID = "2009857155-P69Z9Mo9"; 
+        const LIFF_ID = "2009857155-P69Z9Mo9";
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
-        const webhookUrl = "https://hook.eu1.make.com/33xiev8snwr1r8slk4oa3cb5843m47ql"; 
+        const webhookUrl = "https://hook.eu1.make.com/33xiev8snwr1r8slk4oa3cb5843m47ql";
 
         let allServices = [];
 
         window.onerror = function(msg, url, line) {
-            alert("❌ เจอจุดพัง: " + msg + "\nบรรทัดที่: " + line);
+            alert("❌ เกิดข้อผิดพลาด: " + msg + "\nบรรทัดที่: " + line);
             return false;
         };
 
@@ -86,140 +86,482 @@
         async function initLIFF() {
             try {
                 await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { 
-                    liff.login(); 
-                } else {
-                    await loadSheetData();
+
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
                 }
-            } catch (err) { 
-                alert("❌ LIFF Error: " + err.message); 
+
+                await loadSheetData();
+            } catch (err) {
+                alert("❌ LIFF Error: " + getErrorMessage(err));
             }
         }
 
         async function loadSheetData() {
             try {
                 const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+                if (!response.ok) {
+                    throw new Error("ไม่สามารถโหลดข้อมูลบริการได้ (" + response.status + ")");
+                }
+
                 const text = await response.text();
-                const rows = text.split(/\r?\n/).slice(1);
-                
-                allServices = rows.map(row => {
-                    const cols = row.split(',');
-                    return { 
-                        id: cols[0]?.trim(), 
-                        platform: cols[1]?.trim(), 
-                        name: cols[2]?.trim(), 
-                        min: parseInt(cols[3]) || 0, 
-                        max: parseInt(cols[4]) || 0, 
-                        price: parseFloat(cols[5]) || 0,
-                        id_24social: cols[6]?.trim() || "" 
-                    };
-                }).filter(s => s.name);
+                const rows = parseCSV(text);
+
+                if (!rows.length || rows.length === 1) {
+                    throw new Error("ไม่พบข้อมูลบริการใน Google Sheet");
+                }
+
+                const dataRows = rows.slice(1);
+
+                allServices = dataRows.map(cols => ({
+                    id: String(cols[0] || "").trim(),
+                    platform: String(cols[1] || "").trim(),
+                    name: String(cols[2] || "").trim(),
+                    min: parseInt(cols[3], 10) || 0,
+                    max: parseInt(cols[4], 10) || 0,
+                    price: parseFloat(cols[5]) || 0,
+                    id_24social: String(cols[6] || "").trim()
+                })).filter(s => s.id && s.platform && s.name);
 
                 const platforms = [...new Set(allServices.map(s => s.platform))];
-                const pSelect = document.getElementById('platformSelect');
+                const pSelect = document.getElementById("platformSelect");
+
                 if (!pSelect) return;
 
-                pSelect.innerHTML = '<option value="">-- เลือก Platform --</option>';
-                platforms.forEach(p => { 
-                    let opt = document.createElement('option'); opt.value = p; opt.innerHTML = p; pSelect.appendChild(opt); 
+                pSelect.innerHTML = "";
+                appendOption(pSelect, "", "-- เลือก Platform --");
+
+                platforms.forEach(platform => {
+                    appendOption(pSelect, platform, platform);
                 });
-            } catch (error) { 
-                alert("❌ โหลดข้อมูลพลาด: " + error.message); 
+
+                resetServiceSelect();
+                clearOrderInfo();
+            } catch (error) {
+                alert("❌ โหลดข้อมูลพลาด: " + getErrorMessage(error));
             }
         }
 
+        function parseCSV(text) {
+            const rows = [];
+            let row = [];
+            let current = "";
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const next = text[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && next === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === "," && !inQuotes) {
+                    row.push(current);
+                    current = "";
+                } else if ((char === "\n" || char === "\r") && !inQuotes) {
+                    if (char === "\r" && next === "\n") i++;
+                    row.push(current);
+                    if (row.some(cell => String(cell).trim() !== "")) {
+                        rows.push(row);
+                    }
+                    row = [];
+                    current = "";
+                } else {
+                    current += char;
+                }
+            }
+
+            if (current.length > 0 || row.length > 0) {
+                row.push(current);
+                if (row.some(cell => String(cell).trim() !== "")) {
+                    rows.push(row);
+                }
+            }
+
+            return rows;
+        }
+
+        function appendOption(selectEl, value, text) {
+            const opt = document.createElement("option");
+            opt.value = value;
+            opt.textContent = text;
+            selectEl.appendChild(opt);
+        }
+
+        function resetServiceSelect() {
+            const sSelect = document.getElementById("serviceSelect");
+            if (!sSelect) return;
+
+            sSelect.innerHTML = "";
+            appendOption(sSelect, "", "-- เลือกบริการ --");
+            sSelect.disabled = true;
+        }
+
+        function clearOrderInfo() {
+            const limitNote = document.getElementById("limitNote");
+            const quantity = document.getElementById("quantity");
+
+            if (limitNote) limitNote.textContent = "";
+            if (quantity) quantity.value = "";
+
+            setMoney("totalPrice", 0);
+            setMoney("finalAmount", 0);
+        }
+
         function filterServices() {
-            const platform = document.getElementById('platformSelect').value;
-            const sSelect = document.getElementById('serviceSelect');
-            sSelect.innerHTML = '<option value="">-- เลือกบริการ --</option>';
-            if (!platform) { sSelect.disabled = true; return; }
-            allServices.filter(s => s.platform === platform).forEach(s => {
-                let opt = document.createElement('option'); opt.value = s.id; opt.innerHTML = s.name; sSelect.appendChild(opt);
-            });
+            const platform = (document.getElementById("platformSelect") || {}).value || "";
+            const sSelect = document.getElementById("serviceSelect");
+
+            if (!sSelect) return;
+
+            sSelect.innerHTML = "";
+            appendOption(sSelect, "", "-- เลือกบริการ --");
+
+            clearOrderInfo();
+
+            if (!platform) {
+                sSelect.disabled = true;
+                return;
+            }
+
+            allServices
+                .filter(service => service.platform === platform)
+                .forEach(service => appendOption(sSelect, service.id, service.name));
+
             sSelect.disabled = false;
         }
 
         function updateMinMax() {
-            const sid = document.getElementById('serviceSelect').value;
-            const service = allServices.find(s => s.id == sid);
-            if (service) document.getElementById('limitNote').innerHTML = `💡 ขั้นต่ำ: ${service.min.toLocaleString()} | สูงสุด: ${service.max.toLocaleString()}`;
+            const sid = (document.getElementById("serviceSelect") || {}).value || "";
+            const service = allServices.find(s => s.id === sid);
+            const limitNote = document.getElementById("limitNote");
+
+            if (service && limitNote) {
+                limitNote.textContent = "💡 ขั้นต่ำ: " + service.min.toLocaleString() + " | สูงสุด: " + service.max.toLocaleString();
+            } else if (limitNote) {
+                limitNote.textContent = "";
+            }
+
             calculatePrice();
         }
 
         function calculatePrice() {
-            const sid = document.getElementById('serviceSelect').value;
-            const qtyInput = document.getElementById('quantity').value;
+            const sid = (document.getElementById("serviceSelect") || {}).value || "";
+            const qtyInput = (document.getElementById("quantity") || {}).value || "";
             const qty = Number(qtyInput);
-            const service = allServices.find(s => s.id == sid);
-            const total = (service && qty) ? (qty * service.price).toFixed(2) : "0.00";
-            document.getElementById('totalPrice').innerHTML = parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2});
-            document.getElementById('finalAmount').innerHTML = parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2});
+            const service = allServices.find(s => s.id === sid);
+
+            let total = 0;
+            if (service && Number.isFinite(qty) && qty > 0) {
+                total = qty * service.price;
+            }
+
+            setMoney("totalPrice", total);
+            setMoney("finalAmount", total);
+        }
+
+        function setMoney(elementId, amount) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+
+            el.textContent = Number(amount || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function isPositiveInteger(value) {
+            return /^[1-9]\d*$/.test(String(value).trim());
+        }
+
+        function isValidHttpUrl(url) {
+            try {
+                const parsed = new URL(url);
+                return parsed.protocol === "http:" || parsed.protocol === "https:";
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function getSelectedService() {
+            const sid = (document.getElementById("serviceSelect") || {}).value || "";
+            return allServices.find(s => s.id === sid) || null;
         }
 
         function goToPayment() {
-            const sid = document.getElementById('serviceSelect').value;
-            const qtyInput = document.getElementById('quantity').value;
-            const link = document.getElementById('targetLink').value;
-            if (!sid || !qtyInput || !link.trim()) return alert("❌ กรอกข้อมูลให้ครบสัส!");
-            document.getElementById('orderSection').style.display = 'none';
-            document.getElementById('slipSection').style.display = 'block';
+            const service = getSelectedService();
+            const qtyInput = (document.getElementById("quantity") || {}).value || "";
+            const qty = Number(qtyInput);
+            const link = ((document.getElementById("targetLink") || {}).value || "").trim();
+
+            if (!service) {
+                alert("❌ กรุณาเลือกบริการ");
+                return;
+            }
+
+            if (!isPositiveInteger(qtyInput)) {
+                alert("❌ กรุณากรอกจำนวนเป็นเลขจำนวนเต็มที่มากกว่า 0");
+                return;
+            }
+
+            if (qty < service.min) {
+                alert("❌ จำนวนต่ำกว่าขั้นต่ำที่กำหนด (" + service.min.toLocaleString() + ")");
+                return;
+            }
+
+            if (qty > service.max) {
+                alert("❌ จำนวนเกินกว่าขั้นสูงสุดที่กำหนด (" + service.max.toLocaleString() + ")");
+                return;
+            }
+
+            if (!link) {
+                alert("❌ กรุณากรอกลิงก์งาน");
+                return;
+            }
+
+            if (!isValidHttpUrl(link)) {
+                alert("❌ กรุณากรอกลิงก์ให้ถูกต้อง");
+                return;
+            }
+
+            document.getElementById("orderSection").style.display = "none";
+            document.getElementById("slipSection").style.display = "block";
         }
 
         function backToOrder() {
-            document.getElementById('orderSection').style.display = 'block';
-            document.getElementById('slipSection').style.display = 'none';
+            document.getElementById("orderSection").style.display = "block";
+            document.getElementById("slipSection").style.display = "none";
+        }
+
+        function validateSlipFile(file) {
+            if (!file) {
+                return { ok: false, message: "กรุณาแนบสลิป" };
+            }
+
+            const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+            const maxSizeMB = 5;
+            const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+            if (!allowedTypes.includes(file.type)) {
+                return { ok: false, message: "รองรับเฉพาะไฟล์ JPG, PNG, WEBP" };
+            }
+
+            if (file.size > maxSizeBytes) {
+                return { ok: false, message: "ขนาดไฟล์ต้องไม่เกิน " + maxSizeMB + " MB" };
+            }
+
+            return { ok: true };
+        }
+
+        function setSubmitButtonLoading(isLoading) {
+            const submitBtn = document.getElementById("submitBtn");
+            if (!submitBtn) return;
+
+            submitBtn.disabled = isLoading;
+            submitBtn.textContent = isLoading ? "กำลังส่งข้อมูล..." : "ยืนยันการโอนเงิน";
+        }
+
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = function() {
+                    try {
+                        const result = String(reader.result || "");
+                        const parts = result.split(",");
+                        if (!parts[1]) {
+                            reject(new Error("ไม่สามารถอ่านไฟล์สลิปได้"));
+                            return;
+                        }
+                        resolve(parts[1]);
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+
+                reader.onerror = function() {
+                    reject(new Error("เกิดข้อผิดพลาดระหว่างอ่านไฟล์"));
+                };
+
+                reader.readAsDataURL(file);
+            });
         }
 
         async function submitOrder() {
-            const slipFile = document.getElementById('slipFile').files[0];
-            if (!slipFile) return alert("❌ แนบสลิปด้วยสัส!");
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = "กำลังส่งข้อมูล...";
+            const slipInput = document.getElementById("slipFile");
+            const slipFile = slipInput && slipInput.files ? slipInput.files[0] : null;
+            const validation = validateSlipFile(slipFile);
+
+            if (!validation.ok) {
+                alert("❌ " + validation.message);
+                return;
+            }
+
+            const service = getSelectedService();
+            const qtyInput = (document.getElementById("quantity") || {}).value || "";
+            const qty = Number(qtyInput);
+            const link = ((document.getElementById("targetLink") || {}).value || "").trim();
+
+            if (!service) {
+                alert("❌ ไม่พบบริการ กรุณาเลือกใหม่");
+                return;
+            }
+
+            if (!isPositiveInteger(qtyInput)) {
+                alert("❌ จำนวนไม่ถูกต้อง");
+                return;
+            }
+
+            if (qty < service.min || qty > service.max) {
+                alert("❌ จำนวนอยู่นอกช่วงที่กำหนด");
+                return;
+            }
+
+            if (!isValidHttpUrl(link)) {
+                alert("❌ ลิงก์ไม่ถูกต้อง");
+                return;
+            }
+
+            setSubmitButtonLoading(true);
 
             try {
                 const profile = await liff.getProfile();
-                const sid = document.getElementById('serviceSelect').value;
-                const service = allServices.find(s => s.id == sid);
-                const qty = document.getElementById('quantity').value;
-                const link = document.getElementById('targetLink').value;
+                const base64Slip = await readFileAsBase64(slipFile);
 
-                const reader = new FileReader();
-                reader.readAsDataURL(slipFile);
-                reader.onload = async () => {
-                    const base64Slip = reader.result.split(',')[1];
-                    const data = {
-                        customer_name: profile.displayName,
-                        userId: profile.userId,
-                        platform: service.platform,
-                        service_name: service.name,
-                        service_id: service.id_24social,
-                        quantity: qty,
-                        link: link,
-                        total_price: (qty * service.price).toFixed(2),
-                        slip_image: base64Slip
-                    };
-
-                    const response = await fetch(webhookUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(data)
-                    });
-
-                    const result = await response.text(); 
-                    if (result.trim() === "OK") {
-                        alert("✅ จ่ายเงินสำเร็จ! ระบบกำลังรันยอดให้จ้า");
-                        liff.closeWindow();
-                    } else {
-                        alert("❌ " + result); 
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = "ส่งใหม่";
-                    }
+                const payload = {
+                    customer_name: profile.displayName || "",
+                    userId: profile.userId || "",
+                    platform: service.platform,
+                    service_name: service.name,
+                    service_id: service.id_24social,
+                    local_service_id: service.id,
+                    quantity: qty,
+                    link: link,
+                    unit_price: service.price,
+                    total_price: Number(qty * service.price).toFixed(2),
+                    slip_image: base64Slip,
+                    slip_file_name: slipFile.name,
+                    slip_file_type: slipFile.type,
+                    slip_file_size: slipFile.size
                 };
+
+                const response = await fetch(webhookUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const rawText = await response.text();
+
+                if (!response.ok) {
+                    throw new Error("Webhook Error (" + response.status + "): " + rawText);
+                }
+
+                let result;
+                try {
+                    result = JSON.parse(rawText);
+                } catch (_) {
+                    result = rawText.trim();
+                }
+
+                handleWebhookResponse(result);
             } catch (err) {
-                alert("Error: " + err.message);
-                submitBtn.disabled = false;
+                alert("❌ " + getErrorMessage(err));
+                setSubmitButtonLoading(false);
             }
+        }
+
+        function handleWebhookResponse(result) {
+            if (typeof result === "string") {
+                if (result === "OK") {
+                    alert("✅ ชำระเงินสำเร็จ ระบบกำลังดำเนินการให้");
+                    safeCloseLiff();
+                    return;
+                }
+
+                alert("❌ " + result);
+                setSubmitButtonLoading(false);
+                return;
+            }
+
+            if (!result || typeof result !== "object") {
+                alert("❌ รูปแบบข้อมูลตอบกลับไม่ถูกต้อง");
+                setSubmitButtonLoading(false);
+                return;
+            }
+
+            const success =
+                result.success === true ||
+                result.status === "success" ||
+                result.status === "SUCCESS" ||
+                result.status === "OK";
+
+            const slipValid =
+                result.easyslip_valid !== false &&
+                result.slip_valid !== false &&
+                result.valid !== false;
+
+            const amountMatch =
+                result.amount_match !== false &&
+                result.price_match !== false;
+
+            const isDuplicate =
+                result.is_duplicate === true ||
+                result.duplicated === true ||
+                result.duplicate === true;
+
+            const message =
+                result.message ||
+                result.error ||
+                result.detail ||
+                "";
+
+            if (!success) {
+                alert("❌ " + (message || "ไม่สามารถทำรายการได้"));
+                setSubmitButtonLoading(false);
+                return;
+            }
+
+            if (!slipValid) {
+                alert("❌ สลิปไม่ผ่านการตรวจสอบ");
+                setSubmitButtonLoading(false);
+                return;
+            }
+
+            if (!amountMatch) {
+                alert("❌ ยอดเงินในสลิปไม่ตรงกับยอดที่ต้องชำระ");
+                setSubmitButtonLoading(false);
+                return;
+            }
+
+            if (isDuplicate) {
+                alert("❌ สลิปนี้ถูกใช้งานไปแล้ว");
+                setSubmitButtonLoading(false);
+                return;
+            }
+
+            alert("✅ ชำระเงินสำเร็จ ระบบกำลังดำเนินการให้");
+            safeCloseLiff();
+        }
+
+        function safeCloseLiff() {
+            try {
+                if (typeof liff !== "undefined" && typeof liff.closeWindow === "function") {
+                    liff.closeWindow();
+                }
+            } catch (_) {}
+        }
+
+        function getErrorMessage(err) {
+            if (!err) return "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
+            if (typeof err === "string") return err;
+            if (err.message) return err.message;
+            return String(err);
         }
     </script>
 </body>
