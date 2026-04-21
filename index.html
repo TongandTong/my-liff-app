@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสั่งงานอัตโนมัติ</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f4; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        select, input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background-color: #00b900; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .price-tag { font-size: 20px; color: #e91e63; font-weight: bold; text-align: center; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h2>🚀 สั่งงานอัตโนมัติ 24 ชม.</h2>
+    
+    <div class="form-group">
+        <label>1. เลือกบริการ</label>
+        <select id="serviceSelect">
+            <option value="">-- กรุณาเลือกบริการ --</option>
+            </select>
+    </div>
+
+    <div class="form-group">
+        <label>2. ใส่ลิงก์ (URL)</label>
+        <input type="text" id="targetLink" placeholder="วางลิงก์โพสต์หรือรูปภาพที่นี่">
+    </div>
+
+    <div class="form-group">
+        <label id="qtyLabel">3. จำนวนที่ต้องการ</label>
+        <input type="number" id="quantity" placeholder="กรอกจำนวนคน">
+        <small id="limitNote" style="color: #666;"></small>
+    </div>
+
+    <div class="price-tag">ราคา: <span id="totalPrice">0</span> บาท</div>
+
+    <div class="form-group">
+        <label>4. แนบสลิปโอนเงิน</label>
+        <input type="file" id="slipFile" accept="image/*">
+    </div>
+
+    <button id="submitBtn">ยืนยันการสั่งซื้อ</button>
+
+    <script>
+        // ตรงนี้เดี๋ยวครูจะมาสอนใส่โค้ดเชื่อม Google Sheet ทีหลังนะจ๊ะ
+        // ตอนนี้เอาหน้าตาก่อน
+    </script>
+</body>
+</html>
