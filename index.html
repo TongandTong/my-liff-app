@@ -1,173 +1,226 @@
-<script>
-    const LIFF_ID = "2009857155-P69Z9Mo9"; 
-    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
-    const webhookUrl = "https://hook.eu1.make.com/33xiev8snwr1r8slk4oa3cb5843m47ql"; 
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialBoost - ระบบสั่งงานอัตโนมัติ</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
+        body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden p-6">
+        <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">🚀 SocialBoost Setup</h2>
 
-    let allServices = [];
+        <div id="orderSection">
+            <div class="mb-4">
+                <label class="block text-gray-700">เลือก Platform</label>
+                <select id="platformSelect" onchange="filterServices()" class="w-full border rounded-lg p-2 mt-1 bg-gray-50">
+                    <option value="">-- กำลังโหลดข้อมูล... --</option>
+                </select>
+            </div>
 
-    // ดักจับ Error แล้วโชว์ Alert ทันทีถ้าจอขาว
-    window.onerror = function(msg, url, line) {
-        alert("❌ เจอจุดพัง: " + msg + "\nที่บรรทัด: " + line);
-        return false;
-    };
+            <div class="mb-4">
+                <label class="block text-gray-700">เลือกบริการ</label>
+                <select id="serviceSelect" onchange="updateMinMax()" disabled class="w-full border rounded-lg p-2 mt-1 bg-gray-50">
+                    <option value="">-- เลือก Platform ก่อน --</option>
+                </select>
+                <p id="limitNote" class="text-xs text-blue-500 mt-1"></p>
+            </div>
 
-    // รอให้ HTML โหลดเสร็จก่อนค่อยเริ่มรัน (แก้จอขาว)
-    window.onload = function() {
-        initLIFF();
-    };
+            <div class="mb-4">
+                <label class="block text-gray-700">จำนวนที่ต้องการ</label>
+                <input type="number" id="quantity" oninput="calculatePrice()" placeholder="กรอกจำนวน..." class="w-full border rounded-lg p-2 mt-1">
+            </div>
 
-    async function initLIFF() {
-        try {
-            await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) { 
-                liff.login(); 
-            } else {
-                await loadSheetData();
-            }
-        } catch (err) { 
-            alert("❌ LIFF Error: " + err.message); 
-        }
-    }
+            <div class="mb-4">
+                <label class="block text-gray-700">ลิงก์งาน (URL)</label>
+                <input type="text" id="targetLink" placeholder="https://..." class="w-full border rounded-lg p-2 mt-1">
+            </div>
 
-    async function loadSheetData() {
-        try {
-            const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
-            const text = await response.text();
-            const rows = text.split(/\r?\n/).slice(1);
+            <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                <p class="text-sm text-gray-600">ยอดชำระทั้งสิ้น:</p>
+                <p class="text-2xl font-bold text-blue-600">฿ <span id="totalPrice">0.00</span></p>
+            </div>
+
+            <button onclick="goToPayment()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">ไปหน้าชำระเงิน</button>
+        </div>
+
+        <div id="slipSection" style="display: none;">
+            <button onclick="backToOrder()" class="text-blue-600 text-sm mb-4">← ย้อนกลับไปแก้ไข</button>
+            <h3 class="text-lg font-bold mb-4">💳 สแกนจ่าย & แนบสลิป</h3>
             
-            allServices = rows.map(row => {
-                const cols = row.split(',');
-                return { 
-                    id: cols[0]?.trim(), 
-                    platform: cols[1]?.trim(), 
-                    name: cols[2]?.trim(), 
-                    min: parseInt(cols[3]) || 0, 
-                    max: parseInt(cols[4]) || 0, 
-                    price: parseFloat(cols[5]) || 0,
-                    id_24social: cols[6]?.trim() || "" 
-                };
-            }).filter(s => s.name);
+            <div class="bg-gray-100 p-4 rounded-lg text-center mb-4">
+                <p class="text-sm text-gray-500">ยอดที่ต้องโอน:</p>
+                <p class="text-xl font-bold text-red-500">฿ <span id="finalAmount">0.00</span></p>
+            </div>
 
-            const platforms = [...new Set(allServices.map(s => s.platform))];
-            const pSelect = document.getElementById('platformSelect');
-            if (!pSelect) return; // กันพังถ้ายังหา Element ไม่เจอ
+            <div class="mb-6">
+                <label class="block text-gray-700 mb-2 font-semibold">อัปโหลดรูปสลิป</label>
+                <input type="file" id="slipFile" accept="image/*" class="w-full border border-dashed border-gray-400 p-4 rounded-lg">
+            </div>
 
-            pSelect.innerHTML = '<option value="">-- เลือก Platform --</option>';
-            platforms.forEach(p => { 
-                let opt = document.createElement('option'); 
-                opt.value = p; 
-                opt.innerHTML = p; 
-                pSelect.appendChild(opt); 
+            <button id="submitBtn" onclick="submitOrder()" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition">ยืนยันการโอนเงิน</button>
+        </div>
+    </div>
+
+    <script>
+        const LIFF_ID = "2009857155-P69Z9Mo9"; 
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
+        const webhookUrl = "https://hook.eu1.make.com/33xiev8snwr1r8slk4oa3cb5843m47ql"; 
+
+        let allServices = [];
+
+        window.onerror = function(msg, url, line) {
+            alert("❌ เจอจุดพัง: " + msg + "\nบรรทัดที่: " + line);
+            return false;
+        };
+
+        window.onload = function() {
+            initLIFF();
+        };
+
+        async function initLIFF() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) { 
+                    liff.login(); 
+                } else {
+                    await loadSheetData();
+                }
+            } catch (err) { 
+                alert("❌ LIFF Error: " + err.message); 
+            }
+        }
+
+        async function loadSheetData() {
+            try {
+                const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+                const text = await response.text();
+                const rows = text.split(/\r?\n/).slice(1);
+                
+                allServices = rows.map(row => {
+                    const cols = row.split(',');
+                    return { 
+                        id: cols[0]?.trim(), 
+                        platform: cols[1]?.trim(), 
+                        name: cols[2]?.trim(), 
+                        min: parseInt(cols[3]) || 0, 
+                        max: parseInt(cols[4]) || 0, 
+                        price: parseFloat(cols[5]) || 0,
+                        id_24social: cols[6]?.trim() || "" 
+                    };
+                }).filter(s => s.name);
+
+                const platforms = [...new Set(allServices.map(s => s.platform))];
+                const pSelect = document.getElementById('platformSelect');
+                if (!pSelect) return;
+
+                pSelect.innerHTML = '<option value="">-- เลือก Platform --</option>';
+                platforms.forEach(p => { 
+                    let opt = document.createElement('option'); opt.value = p; opt.innerHTML = p; pSelect.appendChild(opt); 
+                });
+            } catch (error) { 
+                alert("❌ โหลดข้อมูลพลาด: " + error.message); 
+            }
+        }
+
+        function filterServices() {
+            const platform = document.getElementById('platformSelect').value;
+            const sSelect = document.getElementById('serviceSelect');
+            sSelect.innerHTML = '<option value="">-- เลือกบริการ --</option>';
+            if (!platform) { sSelect.disabled = true; return; }
+            allServices.filter(s => s.platform === platform).forEach(s => {
+                let opt = document.createElement('option'); opt.value = s.id; opt.innerHTML = s.name; sSelect.appendChild(opt);
             });
-        } catch (error) { 
-            alert("❌ โหลดข้อมูลจาก Google Sheets พลาด: " + error.message); 
-        }
-    }
-
-    function filterServices() {
-        const platform = document.getElementById('platformSelect').value;
-        const sSelect = document.getElementById('serviceSelect');
-        sSelect.innerHTML = '<option value="">-- เลือกบริการ --</option>';
-        if (!platform) { sSelect.disabled = true; return; }
-        allServices.filter(s => s.platform === platform).forEach(s => {
-            let opt = document.createElement('option'); opt.value = s.id; opt.innerHTML = s.name; sSelect.appendChild(opt);
-        });
-        sSelect.disabled = false;
-    }
-
-    function updateMinMax() {
-        const sid = document.getElementById('serviceSelect').value;
-        const service = allServices.find(s => s.id == sid);
-        if (service) document.getElementById('limitNote').innerHTML = `💡 ขั้นต่ำ: ${service.min.toLocaleString()} | สูงสุด: ${service.max.toLocaleString()}`;
-        calculatePrice();
-    }
-
-    function calculatePrice() {
-        const sid = document.getElementById('serviceSelect').value;
-        const qtyInput = document.getElementById('quantity').value;
-        const qty = Number(qtyInput);
-        const service = allServices.find(s => s.id == sid);
-        const total = (service && qty) ? (qty * service.price).toFixed(2) : "0.00";
-        document.getElementById('totalPrice').innerHTML = parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2});
-        document.getElementById('finalAmount').innerHTML = parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2});
-    }
-
-    function goToPayment() {
-        const sid = document.getElementById('serviceSelect').value;
-        const qtyInput = document.getElementById('quantity').value;
-        const qty = Number(qtyInput);
-        const link = document.getElementById('targetLink').value;
-        const service = allServices.find(s => s.id == sid);
-
-        if (!sid) return alert("❌ มึงยังไม่ได้เลือกบริการเลยสัส!");
-        if (!link.trim()) return alert("❌ วางลิงก์งานด้วย เดี๋ยวบอทไปไม่ถูก!");
-        if (!qtyInput || qtyInput.includes('.')) return alert("❌ กรุณากรอกจำนวนเป็นเลขจำนวนเต็ม!");
-        
-        if (service) {
-            if (qty < service.min) return alert(`❌ จำนวนน้อยเกินไป! ขั้นต่ำคือ ${service.min}`);
-            if (qty > service.max) return alert(`❌ จำนวนมากเกินไป! สูงสุดคือ ${service.max}`);
+            sSelect.disabled = false;
         }
 
-        document.getElementById('orderSection').style.display = 'none';
-        document.getElementById('slipSection').style.display = 'block';
-    }
-
-    function backToOrder() {
-        document.getElementById('orderSection').style.display = 'block';
-        document.getElementById('slipSection').style.display = 'none';
-    }
-
-    async function submitOrder() {
-        const slipFile = document.getElementById('slipFile').files[0];
-        if (!slipFile) return alert("❌ แนบสลิปด้วยสัส!");
-
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = "กำลังส่งข้อมูล...";
-
-        try {
-            const profile = await liff.getProfile();
+        function updateMinMax() {
             const sid = document.getElementById('serviceSelect').value;
             const service = allServices.find(s => s.id == sid);
-            const qty = document.getElementById('quantity').value;
-            const link = document.getElementById('targetLink').value;
-
-            const reader = new FileReader();
-            reader.readAsDataURL(slipFile);
-            reader.onload = async () => {
-                const base64Slip = reader.result.split(',')[1];
-                const data = {
-                    customer_name: profile.displayName,
-                    userId: profile.userId,
-                    platform: service.platform,
-                    service_name: service.name,
-                    service_id: service.id_24social,
-                    quantity: qty,
-                    link: link,
-                    total_price: (qty * service.price).toFixed(2),
-                    slip_image: base64Slip
-                };
-
-                const response = await fetch(webhookUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.text(); 
-                if (result.trim() === "OK") {
-                    alert("✅ จ่ายเงินสำเร็จ! ระบบกำลังรันยอดให้จ้า");
-                    liff.closeWindow();
-                } else {
-                    alert("❌ มีปัญหา: " + result); 
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = "ส่งข้อมูลแจ้งโอนใหม่";
-                }
-            };
-        } catch (err) {
-            alert("❌ เกิดข้อผิดพลาด: " + err.message);
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = "ส่งข้อมูลแจ้งโอน";
+            if (service) document.getElementById('limitNote').innerHTML = `💡 ขั้นต่ำ: ${service.min.toLocaleString()} | สูงสุด: ${service.max.toLocaleString()}`;
+            calculatePrice();
         }
-    }
-</script>
+
+        function calculatePrice() {
+            const sid = document.getElementById('serviceSelect').value;
+            const qtyInput = document.getElementById('quantity').value;
+            const qty = Number(qtyInput);
+            const service = allServices.find(s => s.id == sid);
+            const total = (service && qty) ? (qty * service.price).toFixed(2) : "0.00";
+            document.getElementById('totalPrice').innerHTML = parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('finalAmount').innerHTML = parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2});
+        }
+
+        function goToPayment() {
+            const sid = document.getElementById('serviceSelect').value;
+            const qtyInput = document.getElementById('quantity').value;
+            const link = document.getElementById('targetLink').value;
+            if (!sid || !qtyInput || !link.trim()) return alert("❌ กรอกข้อมูลให้ครบสัส!");
+            document.getElementById('orderSection').style.display = 'none';
+            document.getElementById('slipSection').style.display = 'block';
+        }
+
+        function backToOrder() {
+            document.getElementById('orderSection').style.display = 'block';
+            document.getElementById('slipSection').style.display = 'none';
+        }
+
+        async function submitOrder() {
+            const slipFile = document.getElementById('slipFile').files[0];
+            if (!slipFile) return alert("❌ แนบสลิปด้วยสัส!");
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "กำลังส่งข้อมูล...";
+
+            try {
+                const profile = await liff.getProfile();
+                const sid = document.getElementById('serviceSelect').value;
+                const service = allServices.find(s => s.id == sid);
+                const qty = document.getElementById('quantity').value;
+                const link = document.getElementById('targetLink').value;
+
+                const reader = new FileReader();
+                reader.readAsDataURL(slipFile);
+                reader.onload = async () => {
+                    const base64Slip = reader.result.split(',')[1];
+                    const data = {
+                        customer_name: profile.displayName,
+                        userId: profile.userId,
+                        platform: service.platform,
+                        service_name: service.name,
+                        service_id: service.id_24social,
+                        quantity: qty,
+                        link: link,
+                        total_price: (qty * service.price).toFixed(2),
+                        slip_image: base64Slip
+                    };
+
+                    const response = await fetch(webhookUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.text(); 
+                    if (result.trim() === "OK") {
+                        alert("✅ จ่ายเงินสำเร็จ! ระบบกำลังรันยอดให้จ้า");
+                        liff.closeWindow();
+                    } else {
+                        alert("❌ " + result); 
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = "ส่งใหม่";
+                    }
+                };
+            } catch (err) {
+                alert("Error: " + err.message);
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
