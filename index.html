@@ -104,15 +104,16 @@
                     const base64Slip = reader.result.split(',')[1];
                     
                     const data = {
-                        customer_name: customerName,
-                        userId: profile.userId,
-                        platform: service.platform,
-                        service_name: service.name,
-                        quantity: qty,
-                        link: link,
-                        total_price: (qty * service.price).toFixed(2),
-                        slip_image: base64Slip
-                    };
+    customer_name: customerName,
+    userId: profile.userId,
+    platform: service.platform,
+    service_name: service.name,
+    service_id: service.id_24social, // 🔥 จารย์เพิ่มอันนี้! (มึงต้องเช็คชื่อตัวแปรใน loadSheetData ด้วยนะ)
+    quantity: qty,
+    link: link,
+    total_price: (qty * service.price).toFixed(2),
+    slip_image: base64Slip
+};
 
                     const response = await fetch(webhookUrl, {
                         method: "POST",
