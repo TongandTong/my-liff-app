@@ -60,44 +60,65 @@
             } catch (err) { console.error("LIFF Error", err); }
         }
 
+        // ฟังก์ชันช่วยแยก CSV ที่ฉลาดขึ้น (รองรับเครื่องหมายคำพูด)
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/);
+            return lines.map(line => {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === ',' && !inQuotes) {
+                        result.push(current);
+                        current = '';
+                    } else current += char;
+                }
+                result.push(current);
+                return result;
+            });
+        }
+
         async function loadSheetData() {
             try {
                 const response = await fetch(SHEET_CSV_URL);
-                const data = await response.text();
-                const rows = data.split(/\r?\n/).slice(1); 
+                const text = await response.text();
+                const allRows = parseCSV(text).slice(1); // ตัดหัวตารางออก
+                
                 const select = document.getElementById('serviceSelect');
                 select.innerHTML = '<option value="">-- เลือกบริการ --</option>';
                 services = [];
 
-                rows.forEach(row => {
-                    const cols = row.split(',');
-                    if(cols.length >= 3) { // ขอแค่มี ID, Platform, Name ก็พอ
+                allRows.forEach(cols => {
+                    if(cols.length >= 3 && cols[2].trim() !== "") { 
                         const item = {
-                            id: cols[0] ? cols[0].trim() : "",
-                            platform: cols[1] ? cols[1].trim() : "",
-                            name: cols[2] ? cols[2].trim() : "",
+                            id: cols[0].trim(),
+                            platform: cols[1].trim(),
+                            name: cols[2].trim(),
                             min: parseInt(cols[3]) || 0,
                             max: parseInt(cols[4]) || 0,
                             price: parseFloat(cols[5]) || 0,
                             apiId: cols[6] ? cols[6].trim() : ""
                         };
-                        if(item.name !== "") {
-                            services.push(item);
-                            let opt = document.createElement('option');
-                            opt.value = item.id;
-                            opt.innerHTML = `[${item.platform}] ${item.name}`;
-                            select.appendChild(opt);
-                        }
+                        services.push(item);
+                        let opt = document.createElement('option');
+                        opt.value = item.id;
+                        opt.innerHTML = `[${item.platform}] ${item.name}`;
+                        select.appendChild(opt);
                     }
                 });
-            } catch (error) { alert("โหลดข้อมูลไม่สำเร็จ เช็คการแชร์ Sheet"); }
+            } catch (error) { 
+                console.error(error);
+                alert("โหลดข้อมูลไม่สำเร็จ เช็คการแชร์ Sheet"); 
+            }
         }
 
         function updateMinMax() {
             const selectedId = document.getElementById('serviceSelect').value;
             const service = services.find(s => s.id == selectedId);
             if (service) {
-                document.getElementById('limitNote').innerHTML = `ขั้นต่ำ ${service.min} / สูงสุด ${service.max}`;
+                document.getElementById('limitNote').innerHTML = `ขั้นต่ำ ${service.min.toLocaleString()} / สูงสุด ${service.max.toLocaleString()}`;
                 document.getElementById('quantity').min = service.min;
                 document.getElementById('quantity').max = service.max;
             }
@@ -109,9 +130,9 @@
             const qty = document.getElementById('quantity').value;
             const service = services.find(s => s.id == selectedId);
             if (service && qty) {
-                document.getElementById('totalPrice').innerHTML = (qty * service.price).toLocaleString();
+                document.getElementById('totalPrice').innerHTML = (qty * service.price).toLocaleString(undefined, {minimumFractionDigits: 2});
             } else {
-                document.getElementById('totalPrice').innerHTML = "0";
+                document.getElementById('totalPrice').innerHTML = "0.00";
             }
         }
 
