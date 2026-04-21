@@ -159,33 +159,37 @@
 
         async function submitOrder() {
             const slipFile = document.getElementById('slipFile').files[0];
-            if (!slipFile) return alert("❌ แนบสลิปด้วยสัส โอนแล้วก็แนบมา!");
+            if (!slipFile) return alert("❌ แนบสลิปด้วยสัส!");
 
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = "กำลังส่งข้อมูล...";
 
-            const sid = document.getElementById('serviceSelect').value;
-            const service = allServices.find(s => s.id == sid);
-            const qty = document.getElementById('quantity').value;
-            const link = document.getElementById('targetLink').value;
+            try {
+                // 🔥 จารย์เพิ่มตรงนี้: ไปดึงชื่อจากโปรไฟล์ LINE ของลูกค้ามา!
+                const profile = await liff.getProfile();
+                const customerName = profile.displayName; 
 
-            // อ่านไฟล์สลิปเป็น Base64
-            const reader = new FileReader();
-            reader.readAsDataURL(slipFile);
-            reader.onload = async () => {
-                const base64Slip = reader.result.split(',')[1];
-                
-                const data = {
-                    platform: service.platform,
-                    service_name: service.name,
-                    quantity: qty,
-                    link: link,
-                    total_price: (qty * service.price).toFixed(2),
-                    slip_image: base64Slip
-                };
+                const sid = document.getElementById('serviceSelect').value;
+                const service = allServices.find(s => s.id == sid);
+                const qty = document.getElementById('quantity').value;
+                const link = document.getElementById('targetLink').value;
 
-                try {
+                const reader = new FileReader();
+                reader.readAsDataURL(slipFile);
+                reader.onload = async () => {
+                    const base64Slip = reader.result.split(',')[1];
+                    
+                    const data = {
+                        customer_name: customerName, // ✅ ส่งชื่อลูกค้าไปด้วยแล้ว
+                        platform: service.platform,
+                        service_name: service.name,
+                        quantity: qty,
+                        link: link,
+                        total_price: (qty * service.price).toFixed(2),
+                        slip_image: base64Slip
+                    };
+
                     const response = await fetch(webhookUrl, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -193,19 +197,17 @@
                     });
 
                     if (response.ok) {
-                        alert("✅ ส่งสลิปสำเร็จ! ระบบกำลังตรวจสอบ (1-3 นาที) งานจะเริ่มอัตโนมัติ");
+                        alert("✅ ส่งข้อมูลสำเร็จ! ชื่อคุณคือ: " + customerName);
                         liff.closeWindow();
                     } else {
-                        alert("❌ ส่งไม่สำเร็จ! ลองใหม่อีกครั้ง");
+                        alert("❌ ส่งไม่สำเร็จ!");
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = "ส่งข้อมูลแจ้งโอน";
                     }
-                } catch (err) {
-                    alert("❌ ระบบขัดข้อง: " + err.message);
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = "ส่งข้อมูลแจ้งโอน";
-                }
-            };
+                };
+            } catch (err) {
+                alert("❌ ดึงชื่อ LINE ไม่ได้: " + err.message);
+                submitBtn.disabled = false;
+            }
         }
 
         initLIFF();
