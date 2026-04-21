@@ -181,7 +181,8 @@
                     const base64Slip = reader.result.split(',')[1];
                     
                     const data = {
-                        customer_name: customerName, // ✅ ส่งชื่อลูกค้าไปด้วยแล้ว
+                        customer_name: customerName,
+                        userId: profile.userId, // ✅ จารย์เพิ่มบรรทัดนี้ให้แล้ว! ส่งเลข ID ลูกค้าไป
                         platform: service.platform,
                         service_name: service.name,
                         quantity: qty,
