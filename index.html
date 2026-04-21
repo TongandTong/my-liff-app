@@ -3,50 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบสั่งงานอัตโนมัติ</title>
+    <title>Order System</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f4; }
+        body { font-family: 'Helvetica', sans-serif; padding: 20px; background-color: #f8f9fa; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { color: #28a745; text-align: center; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
-        select, input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background-color: #00b900; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .price-tag { font-size: 20px; color: #e91e63; font-weight: bold; text-align: center; margin: 20px 0; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+        select, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        .price-box { background: #eef9f1; padding: 15px; border-radius: 10px; text-align: center; margin: 20px 0; border: 2px dashed #28a745; }
+        #totalPrice { font-size: 24px; color: #28a745; font-weight: bold; }
+        button { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h2>🚀 สั่งงานอัตโนมัติ 24 ชม.</h2>
-    
-    <div class="form-group">
-        <label>1. เลือกบริการ</label>
-        <select id="serviceSelect">
-            <option value="">-- กรุณาเลือกบริการ --</option>
+    <div class="card">
+        <h2>🛍️ สั่งซื้อบริการ</h2>
+        
+        <div class="form-group">
+            <label>เลือกบริการ</label>
+            <select id="serviceSelect" onchange="updateMinMax()">
+                <option value="">-- กำลังโหลดข้อมูล... --</option>
             </select>
+        </div>
+
+        <div class="form-group">
+            <label>วางลิงก์งาน</label>
+            <input type="text" id="targetLink" placeholder="https://www.facebook.com/...">
+        </div>
+
+        <div class="form-group">
+            <label id="qtyLabel">จำนวน</label>
+            <input type="number" id="quantity" oninput="calculatePrice()" placeholder="กรอกตัวเลข">
+            <small id="limitNote" style="color: #888;"></small>
+        </div>
+
+        <div class="price-box">
+            <span>ยอดชำระสุทธิ</span><br>
+            <span id="totalPrice">0</span> บาท
+        </div>
+
+        <div class="form-group">
+            <label>แนบสลิปโอนเงิน</label>
+            <input type="file" id="slipFile" accept="image/*">
+        </div>
+
+        <button onclick="submitOrder()">ยืนยันสั่งซื้อ</button>
     </div>
-
-    <div class="form-group">
-        <label>2. ใส่ลิงก์ (URL)</label>
-        <input type="text" id="targetLink" placeholder="วางลิงก์โพสต์หรือรูปภาพที่นี่">
-    </div>
-
-    <div class="form-group">
-        <label id="qtyLabel">3. จำนวนที่ต้องการ</label>
-        <input type="number" id="quantity" placeholder="กรอกจำนวนคน">
-        <small id="limitNote" style="color: #666;"></small>
-    </div>
-
-    <div class="price-tag">ราคา: <span id="totalPrice">0</span> บาท</div>
-
-    <div class="form-group">
-        <label>4. แนบสลิปโอนเงิน</label>
-        <input type="file" id="slipFile" accept="image/*">
-    </div>
-
-    <button id="submitBtn">ยืนยันการสั่งซื้อ</button>
 
     <script>
-        // ตรงนี้เดี๋ยวครูจะมาสอนใส่โค้ดเชื่อม Google Sheet ทีหลังนะจ๊ะ
-        // ตอนนี้เอาหน้าตาก่อน
+        const LIFF_ID = "2009857155-P69Z9Mo9";
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv)";
+
+        let services = [];
+
+        async function initLIFF() {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) { liff.login(); }
+            loadSheetData();
+        }
+
+        async function loadSheetData() {
+            const response = await fetch(SHEET_CSV_URL);
+            const data = await response.text();
+            const rows = data.split('\n').slice(1);
+            const select = document.getElementById('serviceSelect');
+            select.innerHTML = '<option value="">-- เลือกบริการ --</option>';
+
+            rows.forEach(row => {
+                const cols = row.split(',');
+                if(cols.length > 1) {
+                    const item = {
+                        id: cols[0],
+                        name: cols[2],
+                        min: parseInt(cols[3]),
+                        max: parseInt(cols[4]),
+                        price: parseFloat(cols[5]),
+                        apiId: cols[6]
+                    };
+                    services.push(item);
+                    let opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.innerHTML = item.name;
+                    select.appendChild(opt);
+                }
+            });
+        }
+
+        function updateMinMax() {
+            const selectedId = document.getElementById('serviceSelect').value;
+            const service = services.find(s => s.id == selectedId);
+            if (service) {
+                document.getElementById('limitNote').innerHTML = `ขั้นต่ำ ${service.min} / สูงสุด ${service.max}`;
+                document.getElementById('quantity').min = service.min;
+                document.getElementById('quantity').max = service.max;
+            }
+            calculatePrice();
+        }
+
+        function calculatePrice() {
+            const selectedId = document.getElementById('serviceSelect').value;
+            const qty = document.getElementById('quantity').value;
+            const service = services.find(s => s.id == selectedId);
+            if (service && qty) {
+                document.getElementById('totalPrice').innerHTML = (qty * service.price).toFixed(2);
+            } else {
+                document.getElementById('totalPrice').innerHTML = "0";
+            }
+        }
+
+        async function submitOrder() {
+            // เดี๋ยว Phase 3 เราจะมาเขียนตรงนี้ให้ส่งไปหา Make.com นะสัส!
+            alert("จารย์บอกว่าใจเย็น! เดี๋ยว Phase 3 เราจะมาเชื่อมระบบส่งข้อมูลกัน");
+        }
+
+        initLIFF();
     </script>
 </body>
 </html>
