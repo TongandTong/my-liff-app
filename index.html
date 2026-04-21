@@ -18,8 +18,9 @@
         .bank-details { font-size: 18px; font-weight: bold; color: #856404; text-align: center; line-height: 1.6; }
         #slipSection { display: none; }
         button { width: 100%; padding: 16px; background: #28a745; color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:disabled { background: #ccc; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
         .btn-secondary { background: #6c757d; margin-top: 10px; }
+        small { color: #666; font-size: 12px; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -41,7 +42,7 @@
             <div class="form-group">
                 <label id="qtyLabel">4. ระบุจำนวน</label>
                 <input type="number" id="quantity" oninput="calculatePrice()" placeholder="ระบุจำนวน" step="1" inputmode="numeric">
-                <small id="limitNote" style="display:block; color:#666; margin-top:5px;">กรุณาเลือกบริการ</small>
+                <small id="limitNote">กรุณาเลือกบริการ</small>
             </div>
             <div class="price-box">
                 <span style="color: #666;">ยอดที่ต้องชำระ</span><br>
@@ -72,14 +73,9 @@
     </div>
 
     <script>
-        // --- ส่วนที่มึงต้องแก้เอง ---
         const LIFF_ID = "2009857155-P69Z9Mo9"; 
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
-        
-        // 👇 บรรทัดนี้แหละสัสปอนด์!!! เอาลิงก์จาก Make มาใส่แทนในฟันหนูซะ!
         const webhookUrl = "https://hook.eu1.make.com/33xiev8snwr1r8slk4oa3cb5843m47ql"; 
-        
-        // -----------------------
 
         let allServices = [];
 
@@ -127,7 +123,8 @@
 
         function calculatePrice() {
             const sid = document.getElementById('serviceSelect').value;
-            const qty = Number(document.getElementById('quantity').value);
+            const qtyInput = document.getElementById('quantity').value;
+            const qty = Number(qtyInput);
             const service = allServices.find(s => s.id == sid);
             const total = (service && qty) ? (qty * service.price).toFixed(2) : "0.00";
             document.getElementById('totalPrice').innerHTML = parseFloat(total).toLocaleString(undefined, {minimumFractionDigits: 2});
@@ -136,9 +133,21 @@
 
         function goToPayment() {
             const sid = document.getElementById('serviceSelect').value;
-            if (!sid || !document.getElementById('targetLink').value.trim() || !document.getElementById('quantity').value) {
-                return alert("❌ กรอกข้อมูลให้ครบก่อนสัส!");
+            const qtyInput = document.getElementById('quantity').value;
+            const qty = Number(qtyInput);
+            const link = document.getElementById('targetLink').value;
+            const service = allServices.find(s => s.id == sid);
+
+            // กลับมาแล้ว! ระบบตรวจเช็คแบบละเอียด
+            if (!sid) return alert("❌ มึงยังไม่ได้เลือกบริการเลยสัส!");
+            if (!link.trim()) return alert("❌ วางลิงก์งานด้วย เดี๋ยวบอทไปไม่ถูก!");
+            if (!qtyInput || qtyInput.includes('.')) return alert("❌ กรุณากรอกจำนวนเป็นเลขจำนวนเต็ม!");
+            
+            if (service) {
+                if (qty < service.min) return alert(`❌ จำนวนน้อยเกินไป! ขั้นต่ำคือ ${service.min}`);
+                if (qty > service.max) return alert(`❌ จำนวนมากเกินไป! สูงสุดคือ ${service.max}`);
             }
+
             document.getElementById('orderSection').style.display = 'none';
             document.getElementById('slipSection').style.display = 'block';
         }
@@ -149,8 +158,8 @@
         }
 
         async function submitOrder() {
-            const slip = document.getElementById('slipFile').files[0];
-            if (!slip) return alert("❌ แนบสลิปด้วยสัส!");
+            const slipFile = document.getElementById('slipFile').files[0];
+            if (!slipFile) return alert("❌ แนบสลิปด้วยสัส โอนแล้วก็แนบมา!");
 
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
@@ -161,10 +170,12 @@
             const qty = document.getElementById('quantity').value;
             const link = document.getElementById('targetLink').value;
 
+            // อ่านไฟล์สลิปเป็น Base64
             const reader = new FileReader();
-            reader.readAsDataURL(slip);
+            reader.readAsDataURL(slipFile);
             reader.onload = async () => {
                 const base64Slip = reader.result.split(',')[1];
+                
                 const data = {
                     platform: service.platform,
                     service_name: service.name,
@@ -175,16 +186,24 @@
                 };
 
                 try {
-                    await fetch(webhookUrl, {
+                    const response = await fetch(webhookUrl, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(data)
                     });
-                    alert("✅ ส่งข้อมูลสำเร็จ! ปิดหน้าต่างได้เลย");
-                    liff.closeWindow();
+
+                    if (response.ok) {
+                        alert("✅ ส่งสลิปสำเร็จ! ระบบกำลังตรวจสอบ (1-3 นาที) งานจะเริ่มอัตโนมัติ");
+                        liff.closeWindow();
+                    } else {
+                        alert("❌ ส่งไม่สำเร็จ! ลองใหม่อีกครั้ง");
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = "ส่งข้อมูลแจ้งโอน";
+                    }
                 } catch (err) {
-                    alert("❌ พัง: " + err.message);
+                    alert("❌ ระบบขัดข้อง: " + err.message);
                     submitBtn.disabled = false;
+                    submitBtn.innerHTML = "ส่งข้อมูลแจ้งโอน";
                 }
             };
         }
