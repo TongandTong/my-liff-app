@@ -3,50 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test App</title>
+    <title>Order System V2</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: 'Helvetica', sans-serif; padding: 20px; background-color: #f8f9fa; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        h2 { color: #28a745; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+        select, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        .price-box { background: #eef9f1; padding: 15px; border-radius: 10px; text-align: center; margin: 20px 0; border: 2px dashed #28a745; }
+        #totalPrice { font-size: 24px; color: #28a745; font-weight: bold; }
+        button { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <div style="padding: 20px; text-align: center;">
-        <h2 style="color: blue;">เช็คสถานะการเชื่อมต่อ</h2>
-        <p id="status">กำลังเริ่มต้นระบบ...</p>
-        <hr>
-        <select id="testSelect" style="width: 100%; padding: 10px;">
-            <option>-- รอโหลดข้อมูล --</option>
-        </select>
+    <div class="card">
+        <h2>🛍️ สั่งซื้อบริการ (ของดีราคาถูก)</h2>
+        <div class="form-group">
+            <label>เลือกบริการ</label>
+            <select id="serviceSelect" onchange="updateMinMax()">
+                <option value="">-- กำลังโหลดข้อมูล... --</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>วางลิงก์งาน</label>
+            <input type="text" id="targetLink" placeholder="https://www.facebook.com/...">
+        </div>
+        <div class="form-group">
+            <label id="qtyLabel">จำนวน</label>
+            <input type="number" id="quantity" oninput="calculatePrice()" placeholder="กรอกตัวเลข">
+            <small id="limitNote" style="color: #888;"></small>
+        </div>
+        <div class="price-box">
+            <span>ยอดชำระสุทธิ</span><br>
+            <span id="totalPrice">0.00</span> บาท
+        </div>
+        <div class="form-group">
+            <label>แนบสลิปโอนเงิน (เดี๋ยว Phase 3 จะใช้เช็คเงิน)</label>
+            <input type="file" id="slipFile" accept="image/*">
+        </div>
+        <button onclick="submitOrder()">ยืนยันสั่งซื้อ</button>
     </div>
 
     <script>
         const LIFF_ID = "2009857155-P69Z9Mo9";
-        const SHEET_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
 
-        async function start() {
+        let services = [];
+
+        async function initLIFF() {
             try {
-                document.getElementById('status').innerText = "กำลังต่อกับ LINE...";
                 await liff.init({ liffId: LIFF_ID });
-                document.getElementById('status').innerText = "ต่อ LINE สำเร็จ! กำลังดึง Sheet...";
+                if (!liff.isLoggedIn()) { liff.login(); }
+                loadSheetData();
+            } catch (err) { console.error("LIFF Error", err); }
+        }
+
+        async function loadSheetData() {
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                const text = await response.text();
+                const rows = text.split(/\r?\n/).slice(1);
                 
-                const res = await fetch(SHEET_URL);
-                const text = await res.text();
-                const lines = text.split(/\r?\n/).slice(1);
-                
-                const select = document.getElementById('testSelect');
-                select.innerHTML = '';
-                
-                lines.forEach(line => {
-                    const col = line.split(',');
-                    if(col.length >= 3) {
-                        let opt = document.createElement('option');
-                        opt.innerHTML = col[2]; // ช่องชื่อบริการ
-                        select.appendChild(opt);
+                const select = document.getElementById('serviceSelect');
+                select.innerHTML = '<option value="">-- เลือกบริการ --</option>';
+                services = [];
+
+                rows.forEach(row => {
+                    const cols = row.split(',');
+                    if(cols.length >= 6) {
+                        const item = {
+                            id: cols[0].trim(),
+                            platform: cols[1].trim(),
+                            name: cols[2].trim(),
+                            min: parseInt(cols[3]) || 0,
+                            max: parseInt(cols[4]) || 0,
+                            price: parseFloat(cols[5]) || 0
+                        };
+                        if(item.name) {
+                            services.push(item);
+                            let opt = document.createElement('option');
+                            opt.value = item.id;
+                            opt.innerHTML = `[${item.platform}] ${item.name}`;
+                            select.appendChild(opt);
+                        }
                     }
                 });
-                document.getElementById('status').innerText = "ดึงข้อมูลสำเร็จแล้วสัส!";
-            } catch (e) {
-                document.getElementById('status').innerText = "พังเพราะ: " + e.message;
+            } catch (error) { alert("ดึง Sheet ไม่เข้า เช็ค Tab แรกสุดด่วน!"); }
+        }
+
+        function updateMinMax() {
+            const selectedId = document.getElementById('serviceSelect').value;
+            const service = services.find(s => s.id == selectedId);
+            if (service) {
+                document.getElementById('limitNote').innerHTML = `ขั้นต่ำ ${service.min.toLocaleString()} / สูงสุด ${service.max.toLocaleString()}`;
+                document.getElementById('quantity').min = service.min;
+                document.getElementById('quantity').max = service.max;
+                calculatePrice();
             }
         }
-        start();
+
+        function calculatePrice() {
+            const selectedId = document.getElementById('serviceSelect').value;
+            const qty = document.getElementById('quantity').value;
+            const service = services.find(s => s.id == selectedId);
+            if (service && qty) {
+                const total = (qty * service.price).toFixed(2);
+                document.getElementById('totalPrice').innerHTML = parseFloat(total).toLocaleString();
+            } else {
+                document.getElementById('totalPrice').innerHTML = "0.00";
+            }
+        }
+
+        function submitOrder() {
+            alert("ของจริงกำลังจะเริ่ม! Phase 3: ส่งข้อมูลไปเช็คสลิปและสั่งงานบอท!");
+        }
+
+        initLIFF();
     </script>
 </body>
 </html>
