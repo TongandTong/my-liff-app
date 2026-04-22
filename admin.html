@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialBoost - Admin Area</title>
+    <title>SocialBoost - Admin Area (Order Search)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
@@ -22,6 +22,7 @@
                 autocomplete="current-password"
             >
             <button
+                id="loginBtn"
                 onclick="checkPass()"
                 class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl transition-all"
             >
@@ -41,28 +42,25 @@
                 </button>
             </div>
 
-            <p class="text-center text-slate-400 text-sm mb-6">สั่งงานแมนนวลเมื่อระบบอัตโนมัติมีปัญหา</p>
+            <p class="text-center text-slate-400 text-sm mb-6">ใช้ Order ID เพื่อสั่งงานแมนนวลเมื่อระบบอัตโนมัติมีปัญหา</p>
 
             <form id="adminForm" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">เลขแถวใน Sheet</label>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">รหัสออเดอร์ (Order ID)</label>
                     <input
-                        type="number"
-                        id="rowNumber"
+                        type="text"
+                        id="orderID"
                         class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"
-                        placeholder="เช่น 15"
+                        placeholder="เช่น ORD2024XXXX"
                         required
-                        min="1"
-                        step="1"
+                        maxlength="100"
                     >
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Service ID</label>
                     <select id="service" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" required>
-                        <option value="">-- เลือกบริการ --</option>
-                        <option value="1234">บริการ 1 (ใส่เลข ID ของ 24social)</option>
-                        <option value="5678">บริการ 2 (ใส่เลข ID ของ 24social)</option>
+                        <option value="">-- กำลังโหลดบริการ... --</option>
                     </select>
                 </div>
 
@@ -106,8 +104,8 @@
                     <label class="block text-xs font-bold text-slate-400 uppercase mb-1">เหตุผลที่ Override</label>
                     <textarea
                         id="adminNote"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white min-h-[100px]"
-                        placeholder="เช่น ลูกค้าชำระแล้ว แต่ webhook เดิมไม่ทำงาน"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white min-h-[80px]"
+                        placeholder="อธิบายสาเหตุที่ต้องสั่งงานแมนนวล"
                         required
                         maxlength="500"
                     ></textarea>
@@ -120,7 +118,7 @@
                     id="submitBtn"
                     class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all"
                 >
-                    ⚡️ ยืนยันการสั่งงานแมนนวล
+                    ⚡️ ยืนยันการสั่งงาน
                 </button>
             </form>
         </div>
@@ -132,6 +130,7 @@
         const THE_KEY = "100818";
         const ADMIN_WEBHOOK = "https://hook.eu1.make.com/f77e3nr7tiwft9ow2ig710ksnga4ngjt";
         const SESSION_KEY = "socialboost_admin_ok";
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
 
         function setStatus(message, type = "info") {
             const status = document.getElementById("status");
@@ -147,12 +146,17 @@
                 status.classList.add("text-slate-300");
             }
 
-            status.textContent = message;
+            status.textContent = message || "";
+        }
+
+        function clearStatus() {
+            setStatus("", "info");
         }
 
         function showAdminArea() {
             document.getElementById("loginArea").style.display = "none";
             document.getElementById("adminArea").style.display = "block";
+            loadServices();
         }
 
         function showLoginArea() {
@@ -160,8 +164,26 @@
             document.getElementById("adminArea").style.display = "none";
         }
 
+        function getTrimmedValue(id) {
+            const el = document.getElementById(id);
+            return el ? String(el.value || "").trim() : "";
+        }
+
+        function isPositiveInteger(value) {
+            return /^[1-9]\d*$/.test(String(value).trim());
+        }
+
+        function isValidHttpUrl(url) {
+            try {
+                const parsed = new URL(url);
+                return parsed.protocol === "http:" || parsed.protocol === "https:";
+            } catch (_) {
+                return false;
+            }
+        }
+
         function checkPass() {
-            const pass = (document.getElementById("adminPass").value || "").trim();
+            const pass = getTrimmedValue("adminPass");
 
             if (!pass) {
                 setStatus("กรุณากรอกรหัสผ่านแอดมิน", "error");
@@ -179,99 +201,183 @@
 
         function logoutAdmin() {
             sessionStorage.removeItem(SESSION_KEY);
-            document.getElementById("adminForm").reset();
-            document.getElementById("adminPass").value = "";
+
+            const form = document.getElementById("adminForm");
+            if (form) form.reset();
+
+            const passInput = document.getElementById("adminPass");
+            if (passInput) passInput.value = "";
+
             showLoginArea();
             setStatus("ออกจากระบบแล้ว", "info");
         }
 
         function restoreSession() {
-            const ok = sessionStorage.getItem(SESSION_KEY);
-            if (ok === "1") {
+            if (sessionStorage.getItem(SESSION_KEY) === "1") {
                 showAdminArea();
             } else {
                 showLoginArea();
             }
         }
 
-        function isPositiveInteger(value) {
-            return /^[1-9]\d*$/.test(String(value).trim());
+        function parseCSV(text) {
+            const rows = [];
+            let row = [];
+            let current = "";
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const next = text[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && next === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === "," && !inQuotes) {
+                    row.push(current);
+                    current = "";
+                } else if ((char === "\n" || char === "\r") && !inQuotes) {
+                    if (char === "\r" && next === "\n") i++;
+                    row.push(current);
+
+                    if (row.some(cell => String(cell).trim() !== "")) {
+                        rows.push(row);
+                    }
+
+                    row = [];
+                    current = "";
+                } else {
+                    current += char;
+                }
+            }
+
+            if (current.length > 0 || row.length > 0) {
+                row.push(current);
+                if (row.some(cell => String(cell).trim() !== "")) {
+                    rows.push(row);
+                }
+            }
+
+            return rows;
         }
 
-        function isValidHttpUrl(url) {
+        async function loadServices() {
+            const serviceSelect = document.getElementById("service");
+            if (!serviceSelect) return;
+
             try {
-                const parsed = new URL(url);
-                return parsed.protocol === "http:" || parsed.protocol === "https:";
-            } catch (_) {
-                return false;
+                serviceSelect.innerHTML = '<option value="">-- กำลังโหลดบริการ... --</option>';
+
+                const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+                if (!response.ok) {
+                    throw new Error("โหลดข้อมูลบริการไม่สำเร็จ");
+                }
+
+                const csvText = await response.text();
+                const rows = parseCSV(csvText);
+
+                if (!rows.length || rows.length === 1) {
+                    throw new Error("ไม่พบข้อมูลบริการ");
+                }
+
+                const dataRows = rows.slice(1);
+                const seen = new Set();
+
+                serviceSelect.innerHTML = '<option value="">-- เลือกบริการ --</option>';
+
+                dataRows.forEach(cols => {
+                    const platform = String(cols[1] || "").trim();    // B
+                    const serviceName = String(cols[2] || "").trim(); // C
+                    const serviceId24 = String(cols[6] || "").trim(); // G
+
+                    if (!platform || !serviceName || !serviceId24) return;
+                    if (seen.has(serviceId24)) return;
+
+                    seen.add(serviceId24);
+
+                    const option = document.createElement("option");
+                    option.value = serviceId24;
+                    option.textContent = `${platform} - ${serviceName} (${serviceId24})`;
+                    serviceSelect.appendChild(option);
+                });
+
+                if (serviceSelect.options.length <= 1) {
+                    serviceSelect.innerHTML = '<option value="">-- ไม่พบบริการที่ใช้งานได้ --</option>';
+                    setStatus("ไม่พบบริการในชีต", "error");
+                }
+            } catch (err) {
+                serviceSelect.innerHTML = '<option value="">-- โหลดบริการไม่สำเร็จ --</option>';
+                setStatus("โหลดรายการบริการไม่สำเร็จ: " + (err.message || err), "error");
             }
         }
 
-        function getTrimmedValue(id) {
-            return (document.getElementById(id)?.value || "").trim();
-        }
-
-        async function submitAdminForm(e) {
-            e.preventDefault();
-
-            const btn = document.getElementById("submitBtn");
-
-            const password = getTrimmedValue("adminPass");
-            const rowNumber = getTrimmedValue("rowNumber");
+        function validateForm() {
+            const orderID = getTrimmedValue("orderID");
             const service = getTrimmedValue("service");
             const qty = getTrimmedValue("qty");
             const link = getTrimmedValue("link");
             const operator = getTrimmedValue("operator");
             const adminNote = getTrimmedValue("adminNote");
 
-            if (password !== THE_KEY) {
-                setStatus("session แอดมินไม่ถูกต้อง กรุณาเข้าสู่ระบบใหม่", "error");
+            if (!orderID || orderID.length < 4) {
+                return "กรุณากรอกรหัสออเดอร์ให้ถูกต้อง";
+            }
+
+            if (!service) {
+                return "กรุณาเลือกบริการ";
+            }
+
+            if (!isPositiveInteger(qty)) {
+                return "จำนวนต้องเป็นจำนวนเต็มที่มากกว่า 0";
+            }
+
+            if (!isValidHttpUrl(link)) {
+                return "กรุณากรอกลิงก์งานให้ถูกต้อง";
+            }
+
+            if (!operator) {
+                return "กรุณากรอกชื่อผู้ดำเนินการ";
+            }
+
+            if (!adminNote) {
+                return "กรุณากรอกเหตุผลที่ override";
+            }
+
+            return "";
+        }
+
+        async function submitAdminForm(e) {
+            e.preventDefault();
+
+            if (sessionStorage.getItem(SESSION_KEY) !== "1") {
+                setStatus("session หมดอายุ กรุณาเข้าสู่ระบบใหม่", "error");
                 logoutAdmin();
                 return;
             }
 
-            if (!isPositiveInteger(rowNumber)) {
-                setStatus("เลขแถวต้องเป็นจำนวนเต็มที่มากกว่า 0", "error");
+            const validationError = validateForm();
+            if (validationError) {
+                setStatus(validationError, "error");
                 return;
             }
 
-            if (!service) {
-                setStatus("กรุณาเลือกบริการ", "error");
-                return;
-            }
-
-            if (!isPositiveInteger(qty)) {
-                setStatus("จำนวนต้องเป็นจำนวนเต็มที่มากกว่า 0", "error");
-                return;
-            }
-
-            if (!isValidHttpUrl(link)) {
-                setStatus("กรุณากรอกลิงก์งานให้ถูกต้อง", "error");
-                return;
-            }
-
-            if (!operator) {
-                setStatus("กรุณากรอกชื่อผู้ดำเนินการ", "error");
-                return;
-            }
-
-            if (!adminNote) {
-                setStatus("กรุณากรอกเหตุผลที่ override", "error");
-                return;
-            }
-
+            const btn = document.getElementById("submitBtn");
             btn.disabled = true;
-            btn.textContent = "⏳ กำลังส่งคำสั่ง...";
+            btn.textContent = "⏳ กำลังส่งข้อมูล...";
 
             const payload = {
-                password: password,
-                rowNumber: Number(rowNumber),
-                service: service,
-                qty: Number(qty),
-                link: link,
+                password: THE_KEY,
+                orderID: getTrimmedValue("orderID"),
+                service: getTrimmedValue("service"),
+                qty: Number(getTrimmedValue("qty")),
+                link: getTrimmedValue("link"),
+                operator: getTrimmedValue("operator"),
+                admin_note: getTrimmedValue("adminNote"),
                 method: "admin_manual",
-                operator: operator,
-                admin_note: adminNote,
                 requested_at: new Date().toISOString()
             };
 
@@ -296,8 +402,10 @@
                 }
 
                 if (typeof result === "string") {
-                    if (result === "OK" || result.toLowerCase() === "success") {
-                        setStatus("สั่งงานแมนนวลเรียบร้อย ระบบจะอัปเดตในชีตอัตโนมัติ", "success");
+                    const lower = result.toLowerCase();
+
+                    if (result === "OK" || lower === "success") {
+                        setStatus("ส่งข้อมูลแล้ว ระบบกำลังค้นหาและสั่งงานให้", "success");
                         document.getElementById("adminForm").reset();
                         return;
                     }
@@ -320,7 +428,7 @@
                         "";
 
                     if (success) {
-                        setStatus(message || "สั่งงานแมนนวลเรียบร้อย ระบบจะอัปเดตในชีตอัตโนมัติ", "success");
+                        setStatus(message || "ส่งข้อมูลแล้ว ระบบกำลังค้นหาและสั่งงานให้", "success");
                         document.getElementById("adminForm").reset();
                     } else {
                         setStatus(message || "ระบบไม่สามารถสั่งงานได้", "error");
@@ -334,11 +442,36 @@
                 setStatus(err?.message || "Webhook ไม่ตอบสนอง", "error");
             } finally {
                 btn.disabled = false;
-                btn.textContent = "⚡️ ยืนยันการสั่งงานแมนนวล";
+                btn.textContent = "⚡️ ยืนยันการสั่งงาน";
             }
         }
 
         document.getElementById("adminForm").addEventListener("submit", submitAdminForm);
+
+        const adminPassInput = document.getElementById("adminPass");
+        adminPassInput.addEventListener("keydown", function(e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                checkPass();
+            }
+        });
+
+        [
+            "adminPass",
+            "orderID",
+            "service",
+            "qty",
+            "link",
+            "operator",
+            "adminNote"
+        ].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener("input", clearStatus);
+                el.addEventListener("change", clearStatus);
+            }
+        });
+
         window.onload = restoreSession;
     </script>
 </body>
