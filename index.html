@@ -479,8 +479,9 @@
         function handleWebhookResponse(result) {
             if (typeof result === "string") {
                 if (result === "OK") {
-                    alert("✅ ชำระเงินสำเร็จ ระบบกำลังดำเนินการให้");
-                    safeCloseLiff();
+                    alert("✅ ชำระเงินสำเร็จ! \nระบบกำลังทำงาน ปกติจะเสร็จภายใน 30-60 นาที\nหากยอดไม่ขึ้นภายใน 2 ชม. ทักแอดมินพร้อมแจ้งชื่อได้เลยจ้า");
+                    // สั่งให้หน้าจอ LIFF ปิดลงเอง เพื่อให้ลูกค้ากลับไปที่ห้องแชท
+                    liff.closeWindow(); 
                     return;
                 }
 
