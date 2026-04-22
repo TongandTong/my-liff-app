@@ -3,73 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialBoost - ติดตามสถานะ</title>
+    <title>SocialBoost - ประวัติการสั่งซื้อ</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
-        body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
     </style>
 </head>
 <body class="p-4">
     <div class="max-w-md mx-auto">
-        <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">🔍 ติดตามสถานะงาน</h2>
-        <div id="loading" class="text-center py-10">
-            <p class="mt-4 text-gray-500 italic">กำลังค้นหาข้อมูลในระบบ...</p>
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold text-slate-800">📋 ประวัติการสั่งซื้อ</h2>
+            <p class="text-sm text-slate-500">ตรวจสอบสถานะงานของมึงได้ที่นี่</p>
         </div>
-        <div id="orderContainer" class="space-y-4"></div>
-        <div id="emptyMessage" style="display: none;" class="text-center py-10 bg-white rounded-xl shadow p-6">
-            <p class="text-gray-500">ไม่พบประวัติการสั่งซื้อครับ</p>
+
+        <div id="loading" class="text-center py-10">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+            <p class="mt-4 text-slate-400 italic">กำลังดึงข้อมูลจากระบบ...</p>
+        </div>
+
+        <div id="orderList" class="space-y-3"></div>
+
+        <div id="emptyMessage" style="display: none;" class="text-center py-10 bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
+            <p class="text-slate-400">ยังไม่เคยสั่งงานเหรอสัส? <br>ไปสั่งก่อนค่อยมาดู!</p>
+            <button onclick="liff.closeWindow()" class="mt-4 bg-blue-600 text-white px-8 py-2 rounded-full font-semibold shadow-lg shadow-blue-200">ไปสั่งงานเลย</button>
         </div>
     </div>
 
     <script>
-        const LIFF_ID = "2009857155-P69Z9Mo9"; 
+        const LIFF_ID = "2009857155-P69Z9Mo9"; // ID เดิมมึง
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
 
-        async function initLIFF() {
+        async function init() {
             try {
                 await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
-                loadMyOrders(profile.userId);
-            } catch (err) { alert("LIFF Error"); }
+                fetchData(profile.userId);
+            } catch (err) { console.error(err); }
         }
 
-        async function loadMyOrders(myUserId) {
+        async function fetchData(myUserId) {
             try {
                 const response = await fetch(SHEET_CSV_URL);
-                const text = await response.text();
-                const rows = text.split('\n').map(row => row.split(',')); // แบบง่าย
+                const data = await response.text();
+                const rows = data.split('\n').map(row => row.split(',').map(cell => cell.replace(/"/g, '').trim()));
                 
-                // สมมติ: [0]วันที่, [2]userId, [3]Platform, [4]บริการ, [5]จำนวน, [7]ราคา, [8]สถานะ
-                const myOrders = rows.filter(row => row[2] && row[2].trim() === myUserId.trim()).reverse();
+                // สมมติ Column: 0=Timestamp, 2=userId, 3=Platform, 4=Service, 5=Qty, 7=Price, 8=Status, 12=OrderID
+                // กรองเฉพาะ userId ของคนนั้น
+                const myOrders = rows.filter(r => r[2] === myUserId).reverse();
 
-                document.getElementById("loading").style.display = "none";
+                document.getElementById('loading').style.display = 'none';
+
                 if (myOrders.length === 0) {
-                    document.getElementById("emptyMessage").style.display = "block";
+                    document.getElementById('emptyMessage').style.display = 'block';
                     return;
                 }
 
-                const container = document.getElementById("orderContainer");
-                myOrders.forEach(order => {
-                    const status = (order[8] || "รอดำเนินการ").replace(/"/g, "");
-                    const card = document.createElement("div");
-                    card.className = "bg-white p-4 rounded-lg shadow border-l-4 " + (status === "เสร็จสิ้น" ? "border-green-500" : "border-yellow-500");
+                const listContainer = document.getElementById('orderList');
+                myOrders.forEach((order, index) => {
+                    const orderId = order[12] || "N/A"; // คอลัมน์ M
+                    const rawStatus = order[8] || "Pending";
+                    const { text, colorClass } = formatStatus(rawStatus);
+
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden";
                     card.innerHTML = `
-                        <div class="flex justify-between font-bold">
-                            <span>${order[3]}</span>
-                            <span class="${status === 'เสร็จสิ้น' ? 'text-green-600' : 'text-yellow-600'}">${status}</span>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Order #${orderId}</span>
+                            <span class="px-3 py-1 rounded-full text-[11px] font-bold ${colorClass}">${text}</span>
                         </div>
-                        <div class="text-sm text-gray-600 mt-1">${order[4]} (${order[5]} วิว/ฟอล)</div>
-                        <div class="text-xs text-gray-400 mt-2">สั่งเมื่อ: ${order[0]}</div>
+                        <h3 class="font-bold text-slate-800 text-lg">${order[3]} - ${order[4]}</h3>
+                        <p class="text-xs text-slate-500 mt-1">จำนวน: ${order[5]} | ราคา: ฿${order[7]}</p>
+                        <p class="text-[10px] text-slate-300 mt-3 italic">${order[0]}</p>
                     `;
-                    container.appendChild(card);
+                    listContainer.appendChild(card);
                 });
-            } catch (e) { alert("โหลดข้อมูลไม่สำเร็จ"); }
+
+            } catch (err) {
+                alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+            }
         }
 
-        window.onload = initLIFF;
+        function formatStatus(status) {
+            status = status.toLowerCase();
+            if (status === 'completed' || status === 'เสร็จสิ้น') {
+                return { text: "✅ งานเสร็จแล้วจ้า", colorClass: "bg-green-100 text-green-600" };
+            } else if (status === 'canceled' || status === 'ยกเลิก') {
+                return { text: "❌ ยกเลิก/คืนเงิน", colorClass: "bg-red-100 text-red-600" };
+            } else {
+                return { text: "🚀 ระบบกำลังเร่งดำเนินการอยู่", colorClass: "bg-amber-100 text-amber-600" };
+            }
+        }
+
+        window.onload = init;
     </script>
 </body>
 </html>
