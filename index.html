@@ -258,7 +258,7 @@
 
             let total = 0;
             if (service && Number.isFinite(qty) && qty > 0) {
-                total = qty * service.price;
+                total = (qty * service.price) / 1000;
             }
 
             setMoney("totalPrice", total);
