@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialBoost - Admin Panel</title>
+    <title>SocialBoost - Admin Area</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
@@ -12,61 +12,59 @@
 </head>
 <body class="p-4">
     <div class="max-w-md mx-auto">
-        <div class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700">
+        <div id="loginArea" class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700 mt-10">
+            <h2 class="text-xl font-bold text-center text-red-400 mb-6">🔒 แอดมินยืนยันตัวตน</h2>
+            <input type="password" id="adminPass" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white mb-4" placeholder="กรอกรหัสลับตรงนี้สัส">
+            <button onclick="checkPass()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl transition-all">เข้าสู่ระบบอาคม</button>
+        </div>
+
+        <div id="adminArea" style="display: none;" class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700">
             <h2 class="text-2xl font-bold text-center text-yellow-400 mb-2">🛠 Admin Override</h2>
-            <p class="text-center text-slate-400 text-sm mb-6">ออกคำสั่งเอง เมื่อระบบอัตโนมัติมีปัญหา</p>
+            <p class="text-center text-slate-400 text-sm mb-6">สั่งงานแมนนวล (รหัสผ่านถูกต้อง)</p>
 
             <form id="adminForm" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">เลขแถวใน Google Sheet (Row Number)</label>
-                    <input type="number" id="rowNumber" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="ดูจากใน Sheet เช่น 15" required>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">เลือกบริการ (Service ID)</label>
-                    <select id="service" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white">
-                        <option value="1234">ปั๊มฟอล IG (ตัวอย่าง)</option>
-                        <option value="5678">เพิ่มวิว TikTok (ตัวอย่าง)</option>
-                        </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">จำนวน</label>
-                    <input type="number" id="qty" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="เช่น 100" required>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">ลิงก์งาน</label>
-                    <input type="url" id="link" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="ก๊อปจากใน Sheet มาวาง" required>
-                </div>
-
-                <hr class="border-slate-700 my-6">
-
-                <button type="submit" id="submitBtn" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all">
-                    ⚡️ สั่งงานแมนนวลทันที
-                </button>
+                <input type="number" id="rowNumber" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="เลขแถวใน Sheet" required>
+                <select id="service" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white">
+                    <option value="1234">บริการ 1 (ใส่เลข ID ของ 24social)</option>
+                    <option value="5678">บริการ 2 (ใส่เลข ID ของ 24social)</option>
+                </select>
+                <input type="number" id="qty" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="จำนวน" required>
+                <input type="url" id="link" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="ลิงก์งาน" required>
+                
+                <hr class="border-slate-700 my-4">
+                <button type="submit" id="submitBtn" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all">⚡️ ยืนยันการสั่งงานแมนนวล</button>
             </form>
         </div>
         <p id="status" class="mt-4 text-center text-sm font-bold"></p>
     </div>
 
     <script>
-        const ADMIN_WEBHOOK = "https://hook.eu1.make.com/4rdm3yckvkhkbbsn9nqkluve173clj3v";
+        const THE_KEY = "123456"; // <-- เปลี่ยนรหัสผ่านตรงนี้สัสปอนด์! (ห้ามลืม)
+        const ADMIN_WEBHOOK = "ใส่_WEBHOOK_URL_ของ_SCENARIO_3_ตรงนี้";
+
+        function checkPass() {
+            const pass = document.getElementById('adminPass').value;
+            if(pass === THE_KEY) {
+                document.getElementById('loginArea').style.display = 'none';
+                document.getElementById('adminArea').style.display = 'block';
+            } else {
+                alert("รหัสผิดนะสัส! อย่าเนียน");
+            }
+        }
 
         document.getElementById('adminForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             const status = document.getElementById('status');
-
             btn.disabled = true;
-            btn.innerText = "⏳ กำลังส่งคำสั่ง...";
+            btn.innerText = "⏳ กำลังเสกยอด...";
 
             const payload = {
+                password: document.getElementById('adminPass').value, // ส่งรหัสไปเช็คที่หลังบ้านด้วย
                 rowNumber: document.getElementById('rowNumber').value,
                 service: document.getElementById('service').value,
                 qty: document.getElementById('qty').value,
-                link: document.getElementById('link').value,
-                method: "Admin Manual"
+                link: document.getElementById('link').value
             };
 
             try {
@@ -75,18 +73,15 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
                 if (res.ok) {
-                    status.innerHTML = "<span class='text-green-400'>✅ สั่งงานสำเร็จ! ระบบใน Sheet จะอัปเดตเอง</span>";
+                    status.innerHTML = "<span class='text-green-400'>✅ สั่งงานเรียบร้อย แถวใน Sheet จะอัปเดตเอง</span>";
                     document.getElementById('adminForm').reset();
-                } else {
-                    throw new Error();
-                }
+                } else { throw new Error(); }
             } catch (err) {
-                status.innerHTML = "<span class='text-red-400'>❌ พัง! เช็ค Webhook ใน Make ด่วน</span>";
+                status.innerHTML = "<span class='text-red-400'>❌ พัง! Webhook ไม่ตอบสนอง</span>";
             } finally {
                 btn.disabled = false;
-                btn.innerText = "⚡️ สั่งงานแมนนวลทันที";
+                btn.innerText = "⚡️ ยืนยันการสั่งงานแมนนวล";
             }
         };
     </script>
