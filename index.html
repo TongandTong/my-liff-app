@@ -446,7 +446,7 @@
                     quantity: qty,
                     link: link,
                     unit_price: service.price,
-                    total_price: Number(qty * service.price).toFixed(2),
+                    total_price: Number((qty * service.price) / 1000).toFixed(2),
                     slip_image: base64Slip,
                     slip_file_name: slipFile.name,
                     slip_file_type: slipFile.type,
