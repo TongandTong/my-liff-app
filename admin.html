@@ -14,76 +14,332 @@
     <div class="max-w-md mx-auto">
         <div id="loginArea" class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700 mt-10">
             <h2 class="text-xl font-bold text-center text-red-400 mb-6">🔒 แอดมินยืนยันตัวตน</h2>
-            <input type="password" id="adminPass" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white mb-4" placeholder="กรอกรหัสลับตรงนี้สัส">
-            <button onclick="checkPass()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl transition-all">เข้าสู่ระบบอาคม</button>
+            <input
+                type="password"
+                id="adminPass"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white mb-4"
+                placeholder="กรอกรหัสผ่านแอดมิน"
+                autocomplete="current-password"
+            >
+            <button
+                onclick="checkPass()"
+                class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl transition-all"
+            >
+                เข้าสู่ระบบ
+            </button>
         </div>
 
-        <div id="adminArea" style="display: none;" class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700">
-            <h2 class="text-2xl font-bold text-center text-yellow-400 mb-2">🛠 Admin Override</h2>
-            <p class="text-center text-slate-400 text-sm mb-6">สั่งงานแมนนวล (รหัสผ่านถูกต้อง)</p>
+        <div id="adminArea" style="display: none;" class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700 mt-10">
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-2xl font-bold text-yellow-400">🛠 Admin Override</h2>
+                <button
+                    type="button"
+                    onclick="logoutAdmin()"
+                    class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-xl"
+                >
+                    ออกจากระบบ
+                </button>
+            </div>
+
+            <p class="text-center text-slate-400 text-sm mb-6">สั่งงานแมนนวลเมื่อระบบอัตโนมัติมีปัญหา</p>
 
             <form id="adminForm" class="space-y-4">
-                <input type="number" id="rowNumber" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="เลขแถวใน Sheet" required>
-                <select id="service" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white">
-                    <option value="1234">บริการ 1 (ใส่เลข ID ของ 24social)</option>
-                    <option value="5678">บริการ 2 (ใส่เลข ID ของ 24social)</option>
-                </select>
-                <input type="number" id="qty" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="จำนวน" required>
-                <input type="url" id="link" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="ลิงก์งาน" required>
-                
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">เลขแถวใน Sheet</label>
+                    <input
+                        type="number"
+                        id="rowNumber"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"
+                        placeholder="เช่น 15"
+                        required
+                        min="1"
+                        step="1"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Service ID</label>
+                    <select id="service" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" required>
+                        <option value="">-- เลือกบริการ --</option>
+                        <option value="1234">บริการ 1 (ใส่เลข ID ของ 24social)</option>
+                        <option value="5678">บริการ 2 (ใส่เลข ID ของ 24social)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">จำนวน</label>
+                    <input
+                        type="number"
+                        id="qty"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"
+                        placeholder="จำนวน"
+                        required
+                        min="1"
+                        step="1"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">ลิงก์งาน</label>
+                    <input
+                        type="url"
+                        id="link"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"
+                        placeholder="https://..."
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">ผู้ดำเนินการ</label>
+                    <input
+                        type="text"
+                        id="operator"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"
+                        placeholder="เช่น admin_nakorn"
+                        required
+                        maxlength="50"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">เหตุผลที่ Override</label>
+                    <textarea
+                        id="adminNote"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white min-h-[100px]"
+                        placeholder="เช่น ลูกค้าชำระแล้ว แต่ webhook เดิมไม่ทำงาน"
+                        required
+                        maxlength="500"
+                    ></textarea>
+                </div>
+
                 <hr class="border-slate-700 my-4">
-                <button type="submit" id="submitBtn" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all">⚡️ ยืนยันการสั่งงานแมนนวล</button>
+
+                <button
+                    type="submit"
+                    id="submitBtn"
+                    class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all"
+                >
+                    ⚡️ ยืนยันการสั่งงานแมนนวล
+                </button>
             </form>
         </div>
+
         <p id="status" class="mt-4 text-center text-sm font-bold"></p>
     </div>
 
     <script>
-        const THE_KEY = "100818"; // <-- เปลี่ยนรหัสผ่านตรงนี้สัสปอนด์! (ห้ามลืม)
+        const THE_KEY = "100818";
         const ADMIN_WEBHOOK = "https://hook.eu1.make.com/f77e3nr7tiwft9ow2ig710ksnga4ngjt";
+        const SESSION_KEY = "socialboost_admin_ok";
+
+        function setStatus(message, type = "info") {
+            const status = document.getElementById("status");
+            if (!status) return;
+
+            status.className = "mt-4 text-center text-sm font-bold";
+
+            if (type === "success") {
+                status.classList.add("text-green-400");
+            } else if (type === "error") {
+                status.classList.add("text-red-400");
+            } else {
+                status.classList.add("text-slate-300");
+            }
+
+            status.textContent = message;
+        }
+
+        function showAdminArea() {
+            document.getElementById("loginArea").style.display = "none";
+            document.getElementById("adminArea").style.display = "block";
+        }
+
+        function showLoginArea() {
+            document.getElementById("loginArea").style.display = "block";
+            document.getElementById("adminArea").style.display = "none";
+        }
 
         function checkPass() {
-            const pass = document.getElementById('adminPass').value;
-            if(pass === THE_KEY) {
-                document.getElementById('loginArea').style.display = 'none';
-                document.getElementById('adminArea').style.display = 'block';
+            const pass = (document.getElementById("adminPass").value || "").trim();
+
+            if (!pass) {
+                setStatus("กรุณากรอกรหัสผ่านแอดมิน", "error");
+                return;
+            }
+
+            if (pass === THE_KEY) {
+                sessionStorage.setItem(SESSION_KEY, "1");
+                showAdminArea();
+                setStatus("เข้าสู่ระบบสำเร็จ", "success");
             } else {
-                alert("รหัสผิดนะสัส! อย่าเนียน");
+                setStatus("รหัสผ่านไม่ถูกต้อง", "error");
             }
         }
 
-        document.getElementById('adminForm').onsubmit = async (e) => {
+        function logoutAdmin() {
+            sessionStorage.removeItem(SESSION_KEY);
+            document.getElementById("adminForm").reset();
+            document.getElementById("adminPass").value = "";
+            showLoginArea();
+            setStatus("ออกจากระบบแล้ว", "info");
+        }
+
+        function restoreSession() {
+            const ok = sessionStorage.getItem(SESSION_KEY);
+            if (ok === "1") {
+                showAdminArea();
+            } else {
+                showLoginArea();
+            }
+        }
+
+        function isPositiveInteger(value) {
+            return /^[1-9]\d*$/.test(String(value).trim());
+        }
+
+        function isValidHttpUrl(url) {
+            try {
+                const parsed = new URL(url);
+                return parsed.protocol === "http:" || parsed.protocol === "https:";
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function getTrimmedValue(id) {
+            return (document.getElementById(id)?.value || "").trim();
+        }
+
+        async function submitAdminForm(e) {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            const status = document.getElementById('status');
+
+            const btn = document.getElementById("submitBtn");
+
+            const password = getTrimmedValue("adminPass");
+            const rowNumber = getTrimmedValue("rowNumber");
+            const service = getTrimmedValue("service");
+            const qty = getTrimmedValue("qty");
+            const link = getTrimmedValue("link");
+            const operator = getTrimmedValue("operator");
+            const adminNote = getTrimmedValue("adminNote");
+
+            if (password !== THE_KEY) {
+                setStatus("session แอดมินไม่ถูกต้อง กรุณาเข้าสู่ระบบใหม่", "error");
+                logoutAdmin();
+                return;
+            }
+
+            if (!isPositiveInteger(rowNumber)) {
+                setStatus("เลขแถวต้องเป็นจำนวนเต็มที่มากกว่า 0", "error");
+                return;
+            }
+
+            if (!service) {
+                setStatus("กรุณาเลือกบริการ", "error");
+                return;
+            }
+
+            if (!isPositiveInteger(qty)) {
+                setStatus("จำนวนต้องเป็นจำนวนเต็มที่มากกว่า 0", "error");
+                return;
+            }
+
+            if (!isValidHttpUrl(link)) {
+                setStatus("กรุณากรอกลิงก์งานให้ถูกต้อง", "error");
+                return;
+            }
+
+            if (!operator) {
+                setStatus("กรุณากรอกชื่อผู้ดำเนินการ", "error");
+                return;
+            }
+
+            if (!adminNote) {
+                setStatus("กรุณากรอกเหตุผลที่ override", "error");
+                return;
+            }
+
             btn.disabled = true;
-            btn.innerText = "⏳ กำลังเสกยอด...";
+            btn.textContent = "⏳ กำลังส่งคำสั่ง...";
 
             const payload = {
-                password: document.getElementById('adminPass').value, // ส่งรหัสไปเช็คที่หลังบ้านด้วย
-                rowNumber: document.getElementById('rowNumber').value,
-                service: document.getElementById('service').value,
-                qty: document.getElementById('qty').value,
-                link: document.getElementById('link').value
+                password: password,
+                rowNumber: Number(rowNumber),
+                service: service,
+                qty: Number(qty),
+                link: link,
+                method: "admin_manual",
+                operator: operator,
+                admin_note: adminNote,
+                requested_at: new Date().toISOString()
             };
 
             try {
                 const res = await fetch(ADMIN_WEBHOOK, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
                 });
-                if (res.ok) {
-                    status.innerHTML = "<span class='text-green-400'>✅ สั่งงานเรียบร้อย แถวใน Sheet จะอัปเดตเอง</span>";
-                    document.getElementById('adminForm').reset();
-                } else { throw new Error(); }
+
+                const rawText = await res.text();
+
+                if (!res.ok) {
+                    throw new Error("Webhook Error (" + res.status + ")");
+                }
+
+                let result;
+                try {
+                    result = JSON.parse(rawText);
+                } catch (_) {
+                    result = rawText.trim();
+                }
+
+                if (typeof result === "string") {
+                    if (result === "OK" || result.toLowerCase() === "success") {
+                        setStatus("สั่งงานแมนนวลเรียบร้อย ระบบจะอัปเดตในชีตอัตโนมัติ", "success");
+                        document.getElementById("adminForm").reset();
+                        return;
+                    }
+
+                    setStatus("ระบบตอบกลับ: " + result, "error");
+                    return;
+                }
+
+                if (result && typeof result === "object") {
+                    const success =
+                        result.success === true ||
+                        result.status === "success" ||
+                        result.status === "SUCCESS" ||
+                        result.status === "OK";
+
+                    const message =
+                        result.message ||
+                        result.detail ||
+                        result.error ||
+                        "";
+
+                    if (success) {
+                        setStatus(message || "สั่งงานแมนนวลเรียบร้อย ระบบจะอัปเดตในชีตอัตโนมัติ", "success");
+                        document.getElementById("adminForm").reset();
+                    } else {
+                        setStatus(message || "ระบบไม่สามารถสั่งงานได้", "error");
+                    }
+
+                    return;
+                }
+
+                setStatus("ระบบตอบกลับไม่ถูกต้อง", "error");
             } catch (err) {
-                status.innerHTML = "<span class='text-red-400'>❌ พัง! Webhook ไม่ตอบสนอง</span>";
+                setStatus(err?.message || "Webhook ไม่ตอบสนอง", "error");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "⚡️ ยืนยันการสั่งงานแมนนวล";
+                btn.textContent = "⚡️ ยืนยันการสั่งงานแมนนวล";
             }
-        };
+        }
+
+        document.getElementById("adminForm").addEventListener("submit", submitAdminForm);
+        window.onload = restoreSession;
     </script>
 </body>
 </html>
