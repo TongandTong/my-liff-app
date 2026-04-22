@@ -62,24 +62,30 @@
                 }
 
                 const listContainer = document.getElementById('orderList');
-                myOrders.forEach((order, index) => {
-                    const orderId = order[12] || "N/A"; // คอลัมน์ M
-                    const rawStatus = order[8] || "Pending";
-                    const { text, colorClass } = formatStatus(rawStatus);
+                // แก้ไขในส่วน myOrders.forEach
+myOrders.forEach((order) => {
+    const orderId = order[7] || "N/A";    // คอลัมน์ H
+    const platform = order[2] || "";      // คอลัมน์ C
+    const service = order[3] || "";       // คอลัมน์ D
+    const qty = order[4] || "0";          // คอลัมน์ E
+    const price = order[5] || "0";        // คอลัมน์ F
+    const rawStatus = order[11] || "Pending"; // คอลัมน์ L
+    
+    const { text, colorClass } = formatStatus(rawStatus);
 
-                    const card = document.createElement('div');
-                    card.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden";
-                    card.innerHTML = `
-                        <div class="flex justify-between items-start mb-3">
-                            <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Order #${orderId}</span>
-                            <span class="px-3 py-1 rounded-full text-[11px] font-bold ${colorClass}">${text}</span>
-                        </div>
-                        <h3 class="font-bold text-slate-800 text-lg">${order[3]} - ${order[4]}</h3>
-                        <p class="text-xs text-slate-500 mt-1">จำนวน: ${order[5]} | ราคา: ฿${order[7]}</p>
-                        <p class="text-[10px] text-slate-300 mt-3 italic">${order[0]}</p>
-                    `;
-                    listContainer.appendChild(card);
-                });
+    const card = document.createElement('div');
+    card.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-3";
+    card.innerHTML = `
+        <div class="flex justify-between items-start mb-3">
+            <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Order #${orderId}</span>
+            <span class="px-3 py-1 rounded-full text-[11px] font-bold ${colorClass}">${text}</span>
+        </div>
+        <h3 class="font-bold text-slate-800 text-lg">${platform} - ${service}</h3>
+        <p class="text-sm text-slate-500 mt-1">จำนวน: ${qty} | ราคา: ฿${price}</p>
+        <p class="text-[10px] text-slate-300 mt-3 italic">${order[0]}</p>
+    `;
+    listContainer.appendChild(card);
+});
 
             } catch (err) {
                 alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
