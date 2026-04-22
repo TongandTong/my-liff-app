@@ -1,1 +1,94 @@
-<!DOCTYPE html> <html lang="th"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>SocialBoost - Admin Panel</title> <script src="https://cdn.tailwindcss.com"></script> <style> @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap'); body { font-family: 'Kanit', sans-serif; background-color: #0f172a; color: white; } </style> </head> <body class="p-4"> <div class="max-w-md mx-auto"> <div class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700"> <h2 class="text-2xl font-bold text-center text-yellow-400 mb-2">🛠 Admin Override</h2> <p class="text-center text-slate-400 text-sm mb-6">ออกคำสั่งเอง เมื่อระบบอัตโนมัติมีปัญหา</p> <form id="adminForm" class="space-y-4"> <div> <label class="block text-xs font-bold text-slate-500 uppercase mb-1">เลขแถวใน Google Sheet (Row Number)</label> <input type="number" id="rowNumber" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="ดูจากใน Sheet เช่น 15" required> </div> <div> <label class="block text-xs font-bold text-slate-500 uppercase mb-1">เลือกบริการ (Service ID)</label> <select id="service" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"> <option value="1234">ปั๊มฟอล IG (ตัวอย่าง)</option> <option value="5678">เพิ่มวิว TikTok (ตัวอย่าง)</option> </select> </div> <div> <label class="block text-xs font-bold text-slate-500 uppercase mb-1">จำนวน</label> <input type="number" id="qty" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="เช่น 100" required> </div> <div> <label class="block text-xs font-bold text-slate-500 uppercase mb-1">ลิงก์งาน</label> <input type="url" id="link" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="ก๊อปจากใน Sheet มาวาง" required> </div> <hr class="border-slate-700 my-6"> <button type="submit" id="submitBtn" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all"> ⚡️ สั่งงานแมนนวลทันที </button> </form> </div> <p id="status" class="mt-4 text-center text-sm font-bold"></p> </div> <script> const ADMIN_WEBHOOK = "ใส่_WEBHOOK_URL_ที่มึงสร้างใหม่ตรงนี้สัส"; document.getElementById('adminForm').onsubmit = async (e) => { e.preventDefault(); const btn = document.getElementById('submitBtn'); const status = document.getElementById('status'); btn.disabled = true; btn.innerText = "⏳ กำลังส่งคำสั่ง..."; const payload = { rowNumber: document.getElementById('rowNumber').value, service: document.getElementById('service').value, qty: document.getElementById('qty').value, link: document.getElementById('link').value, method: "Admin Manual" }; try { const res = await fetch(ADMIN_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (res.ok) { status.innerHTML = "<span class='text-green-400'>✅ สั่งงานสำเร็จ! ระบบใน Sheet จะอัปเดตเอง</span>"; document.getElementById('adminForm').reset(); } else { throw new Error(); } } catch (err) { status.innerHTML = "<span class='text-red-400'>❌ พัง! เช็ค Webhook ใน Make ด่วน</span>"; } finally { btn.disabled = false; btn.innerText = "⚡️ สั่งงานแมนนวลทันที"; } }; </script> </body> </html>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialBoost - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
+        body { font-family: 'Kanit', sans-serif; background-color: #0f172a; color: white; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-md mx-auto">
+        <div class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700">
+            <h2 class="text-2xl font-bold text-center text-yellow-400 mb-2">🛠 Admin Override</h2>
+            <p class="text-center text-slate-400 text-sm mb-6">ออกคำสั่งเอง เมื่อระบบอัตโนมัติมีปัญหา</p>
+
+            <form id="adminForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">เลขแถวใน Google Sheet (Row Number)</label>
+                    <input type="number" id="rowNumber" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="ดูจากใน Sheet เช่น 15" required>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">เลือกบริการ (Service ID)</label>
+                    <select id="service" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white">
+                        <option value="1234">ปั๊มฟอล IG (ตัวอย่าง)</option>
+                        <option value="5678">เพิ่มวิว TikTok (ตัวอย่าง)</option>
+                        </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">จำนวน</label>
+                    <input type="number" id="qty" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="เช่น 100" required>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">ลิงก์งาน</label>
+                    <input type="url" id="link" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white" placeholder="ก๊อปจากใน Sheet มาวาง" required>
+                </div>
+
+                <hr class="border-slate-700 my-6">
+
+                <button type="submit" id="submitBtn" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all">
+                    ⚡️ สั่งงานแมนนวลทันที
+                </button>
+            </form>
+        </div>
+        <p id="status" class="mt-4 text-center text-sm font-bold"></p>
+    </div>
+
+    <script>
+        const ADMIN_WEBHOOK = "https://hook.eu1.make.com/4rdm3yckvkhkbbsn9nqkluve173clj3v";
+
+        document.getElementById('adminForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const status = document.getElementById('status');
+
+            btn.disabled = true;
+            btn.innerText = "⏳ กำลังส่งคำสั่ง...";
+
+            const payload = {
+                rowNumber: document.getElementById('rowNumber').value,
+                service: document.getElementById('service').value,
+                qty: document.getElementById('qty').value,
+                link: document.getElementById('link').value,
+                method: "Admin Manual"
+            };
+
+            try {
+                const res = await fetch(ADMIN_WEBHOOK, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    status.innerHTML = "<span class='text-green-400'>✅ สั่งงานสำเร็จ! ระบบใน Sheet จะอัปเดตเอง</span>";
+                    document.getElementById('adminForm').reset();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                status.innerHTML = "<span class='text-red-400'>❌ พัง! เช็ค Webhook ใน Make ด่วน</span>";
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "⚡️ สั่งงานแมนนวลทันที";
+            }
+        };
+    </script>
+</body>
+</html>
