@@ -452,7 +452,7 @@
             clearStatus();
 
             try {
-                const res = await fetch(BALANCE_WEBHOOK, { method: "GET" });
+                const res = await fetch(BALANCE_WEBHOOK, { method: "POST" });
                 const data = await parseResponse(res);
 
                 if (typeof data === "string") {
