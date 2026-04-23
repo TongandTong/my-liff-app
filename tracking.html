@@ -87,6 +87,11 @@
 
         async function fetchData(myUserId) {
             try {
+                // --- ส่วนที่กูเพิ่มให้: ดึงเลข OrderID จากลิงก์ ---
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetOrderId = urlParams.get('orderID'); 
+                // -------------------------------------------
+
                 const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
                 if (!response.ok) {
                     throw new Error("โหลดข้อมูลไม่สำเร็จ (" + response.status + ")");
@@ -101,11 +106,19 @@
                     return;
                 }
 
-                const dataRows = rows.slice(1); // ตัด header row ออก
+                const dataRows = rows.slice(1); 
 
-                const myOrders = dataRows
-                    .filter(row => String(row[COL.userId] || "").trim() === String(myUserId).trim())
-                    .reverse();
+                // --- แก้ไข Logic การ Filter ตรงนี้สัส ---
+                const myOrders = dataRows.filter(row => {
+                    const matchesUser = String(row[COL.userId] || "").trim() === String(myUserId).trim();
+                    
+                    // ถ้ามีออเดอร์เจาะจงมาในลิงก์ ให้โชว์แค่อันนั้น แต่ถ้าไม่มีให้โชว์ทั้งหมดของ User
+                    if (targetOrderId) {
+                        return matchesUser && String(row[COL.orderId] || "").trim() === String(targetOrderId).trim();
+                    }
+                    return matchesUser;
+                }).reverse();
+                // ---------------------------------------
 
                 hideLoading();
 
