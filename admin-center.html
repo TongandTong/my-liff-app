@@ -41,13 +41,23 @@
                     <p class="text-sm text-slate-400">สั่งงานแมนนวลเมื่อระบบมีปัญหา</p>
                 </a>
 
-                <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 opacity-50">
-                    <h3 class="text-xl font-bold text-white">📊 Sales Summary</h3>
-                    <p class="text-sm text-red-400">อยู่ระหว่างพัฒนา</p>
+                <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-2 gap-3">
+                        <h3 class="text-xl font-bold text-white">💰 API Balance</h3>
+                        <button
+                            onclick="checkBalance()"
+                            id="btnCheck"
+                            class="bg-blue-600 hover:bg-blue-500 text-white text-xs py-2 px-4 rounded-xl transition-all"
+                        >
+                            กดเช็คเงิน
+                        </button>
+                    </div>
+                    <p id="balanceShow" class="text-2xl font-bold text-green-400 mt-2">฿ --.--</p>
+                    <p class="text-xs text-slate-400 mt-1">ยอดเงินคงเหลือใน 24Social</p>
                 </div>
 
                 <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 opacity-50">
-                    <h3 class="text-xl font-bold text-white">💰 API & Products</h3>
+                    <h3 class="text-xl font-bold text-white">📊 Sales Summary</h3>
                     <p class="text-sm text-red-400">อยู่ระหว่างพัฒนา</p>
                 </div>
             </div>
@@ -59,11 +69,27 @@
     <script>
         const THE_KEY = "100818";
         const SESSION_KEY = "socialboost_admin_ok";
+        const WEBHOOK_URL = "https://hook.eu1.make.com/hnfwwdqx1daoy38zvflahwoe1o8mewpg";
 
-        function setStatus(message = "") {
+        function setStatus(message = "", type = "error") {
             const status = document.getElementById("status");
             if (!status) return;
+
+            status.className = "mt-4 text-center text-sm font-bold";
+
+            if (type === "success") {
+                status.classList.add("text-green-400");
+            } else if (type === "info") {
+                status.classList.add("text-slate-300");
+            } else {
+                status.classList.add("text-red-400");
+            }
+
             status.textContent = message;
+        }
+
+        function clearStatus() {
+            setStatus("", "info");
         }
 
         function showDashboard() {
@@ -76,28 +102,97 @@
             document.getElementById("dashboardSection").style.display = "none";
         }
 
+        function requireSession() {
+            if (sessionStorage.getItem(SESSION_KEY) !== "1") {
+                setStatus("session หมดอายุ กรุณาเข้าสู่ระบบใหม่", "error");
+                showLogin();
+                return false;
+            }
+            return true;
+        }
+
         function login() {
             const pass = (document.getElementById("passInput").value || "").trim();
 
             if (!pass) {
-                setStatus("กรุณากรอกรหัสผ่าน");
+                setStatus("กรุณากรอกรหัสผ่าน", "error");
                 return;
             }
 
             if (pass === THE_KEY) {
                 sessionStorage.setItem(SESSION_KEY, "1");
-                setStatus("");
+                clearStatus();
                 showDashboard();
             } else {
-                setStatus("รหัสผ่านไม่ถูกต้อง");
+                setStatus("รหัสผ่านไม่ถูกต้อง", "error");
             }
         }
 
         function logout() {
             sessionStorage.removeItem(SESSION_KEY);
             document.getElementById("passInput").value = "";
-            setStatus("");
+            clearStatus();
+            document.getElementById("balanceShow").textContent = "฿ --.--";
             showLogin();
+        }
+
+        async function checkBalance() {
+            if (!requireSession()) return;
+
+            const btn = document.getElementById("btnCheck");
+            const show = document.getElementById("balanceShow");
+
+            btn.disabled = true;
+            btn.textContent = "⌛ กำลังเช็ค...";
+            show.textContent = "฿ ...";
+            clearStatus();
+
+            try {
+                const res = await fetch(WEBHOOK_URL, { method: "GET" });
+                const rawText = await res.text();
+
+                if (!res.ok) {
+                    throw new Error("Webhook Error (" + res.status + ")");
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (_) {
+                    throw new Error("รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
+                }
+
+                const balance =
+                    data?.money ??
+                    data?.balance ??
+                    data?.amount ??
+                    data?.credit ??
+                    data?.wallet;
+
+                if (balance !== undefined && balance !== null && balance !== "") {
+                    const numericBalance = Number(balance);
+
+                    if (Number.isFinite(numericBalance)) {
+                        show.textContent = "฿ " + numericBalance.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                        setStatus("เช็คยอดเงินสำเร็จ", "success");
+                    } else {
+                        show.textContent = "฿ " + String(balance);
+                        setStatus("เช็คยอดเงินสำเร็จ", "success");
+                    }
+                } else {
+                    show.textContent = "ไม่พบยอดเงิน";
+                    setStatus("ไม่พบฟิลด์ยอดเงินในข้อมูลที่ Make ส่งกลับมา", "error");
+                }
+            } catch (err) {
+                show.textContent = "เช็คยอดไม่สำเร็จ";
+                setStatus(err?.message || "เชื่อมต่อไม่ได้", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "กดเช็คเงิน";
+            }
         }
 
         window.onload = () => {
@@ -116,7 +211,7 @@
         });
 
         document.getElementById("passInput").addEventListener("input", function() {
-            setStatus("");
+            clearStatus();
         });
     </script>
 </body>
