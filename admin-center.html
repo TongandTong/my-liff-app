@@ -240,7 +240,9 @@
         const BALANCE_WEBHOOK = "https://hook.eu1.make.com/hnfwwdqx1daoy38zvflahwoe1o8mewpg";
         const SUMMARY_WEBHOOK = "https://hook.eu1.make.com/yc3vgozmud5crvt7kooewmvdi44mgf31";
         const MANUAL_OVERRIDE_WEBHOOK = "https://hook.eu1.make.com/f77e3nr7tiwft9ow2ig710ksnga4ngjt";
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
+
+        const SERVICES_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&gid=836222095&t=" + Date.now();
+        const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&gid=0&t=" + Date.now();
 
         let servicesLoaded = false;
         let ordersLoaded = false;
@@ -344,6 +346,13 @@
             document.getElementById("balanceShow").textContent = "฿ --.--";
             resetSummaryUI();
             resetRangeReportUI();
+
+            document.getElementById("adminForm").reset();
+            document.getElementById("ordersList").innerHTML = "";
+            document.getElementById("ordersEmpty").classList.add("hidden");
+            servicesLoaded = false;
+            ordersLoaded = false;
+
             clearStatus();
             showLogin();
         }
@@ -615,7 +624,7 @@
             try {
                 serviceSelect.innerHTML = '<option value="">-- กำลังโหลดบริการ... --</option>';
 
-                const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+                const response = await fetch(SERVICES_CSV_URL, { cache: "no-store" });
                 if (!response.ok) {
                     throw new Error("โหลดข้อมูลบริการไม่สำเร็จ");
                 }
@@ -761,7 +770,7 @@
             clearStatus();
 
             try {
-                const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+                const response = await fetch(ORDERS_CSV_URL, { cache: "no-store" });
                 if (!response.ok) {
                     throw new Error("โหลดข้อมูลออเดอร์ไม่สำเร็จ");
                 }
@@ -784,52 +793,52 @@
                 }
 
                 dataRows.forEach(cols => {
-    const createdAt = String(cols[0] || "-").trim();       // A = Date/Time
-    const customerName = String(cols[1] || "-").trim();    // B = Customer Name
-    const platform = String(cols[2] || "-").trim();        // C = Platform
-    const serviceName = String(cols[3] || "-").trim();     // D = Service Name
-    const qty = String(cols[4] || "0").trim();             // E = Quantity
-    const price = String(cols[5] || "0").trim();           // F = Total Price
-    const link = String(cols[6] || "").trim();             // G = Link (URL)
-    const serviceId = String(cols[7] || "N/A").trim();     // H = Service ID
-    const orderId = String(cols[12] || "N/A").trim();      // M = Order ID
+                    const createdAt = String(cols[0] || "-").trim();       // A = Date/Time
+                    const customerName = String(cols[1] || "-").trim();    // B = Customer Name
+                    const platform = String(cols[2] || "-").trim();        // C = Platform
+                    const serviceName = String(cols[3] || "-").trim();     // D = Service Name
+                    const qty = String(cols[4] || "0").trim();             // E = Quantity
+                    const price = String(cols[5] || "0").trim();           // F = Total Price
+                    const link = String(cols[6] || "").trim();             // G = Link (URL)
+                    const serviceId = String(cols[7] || "N/A").trim();     // H = Service ID
+                    const orderId = String(cols[12] || "N/A").trim();      // M = Order ID
 
-    const card = document.createElement("div");
-    card.className = "bg-slate-800 border border-slate-700 rounded-xl p-3";
+                    const card = document.createElement("div");
+                    card.className = "bg-slate-800 border border-slate-700 rounded-xl p-3";
 
-    const title = document.createElement("p");
-    title.className = "font-bold text-white";
-    title.textContent = `${platform} - ${serviceName}`;
+                    const title = document.createElement("p");
+                    title.className = "font-bold text-white";
+                    title.textContent = `${platform} - ${serviceName}`;
 
-    const meta = document.createElement("p");
-    meta.className = "text-sm text-slate-400 mt-1";
-    meta.textContent = `Order ID: ${orderId} | ลูกค้า: ${customerName}`;
+                    const meta = document.createElement("p");
+                    meta.className = "text-sm text-slate-400 mt-1";
+                    meta.textContent = `Order ID: ${orderId} | ลูกค้า: ${customerName}`;
 
-    const sub = document.createElement("p");
-    sub.className = "text-sm text-slate-400 mt-1";
-    sub.textContent = `Qty: ${qty} | Price: ฿${formatMoney(price)} | Service ID: ${serviceId}`;
+                    const sub = document.createElement("p");
+                    sub.className = "text-sm text-slate-400 mt-1";
+                    sub.textContent = `Qty: ${qty} | Price: ฿${formatMoney(price)} | Service ID: ${serviceId}`;
 
-    const time = document.createElement("p");
-    time.className = "text-xs text-slate-500 mt-2";
-    time.textContent = createdAt;
+                    const time = document.createElement("p");
+                    time.className = "text-xs text-slate-500 mt-2";
+                    time.textContent = createdAt;
 
-    card.appendChild(title);
-    card.appendChild(meta);
-    card.appendChild(sub);
+                    card.appendChild(title);
+                    card.appendChild(meta);
+                    card.appendChild(sub);
 
-    if (link) {
-        const linkEl = document.createElement("a");
-        linkEl.href = link;
-        linkEl.target = "_blank";
-        linkEl.rel = "noopener noreferrer";
-        linkEl.className = "text-xs text-blue-400 underline break-all block mt-2";
-        linkEl.textContent = link;
-        card.appendChild(linkEl);
-    }
+                    if (link) {
+                        const linkEl = document.createElement("a");
+                        linkEl.href = link;
+                        linkEl.target = "_blank";
+                        linkEl.rel = "noopener noreferrer";
+                        linkEl.className = "text-xs text-blue-400 underline break-all block mt-2";
+                        linkEl.textContent = link;
+                        card.appendChild(linkEl);
+                    }
 
-    card.appendChild(time);
-    list.appendChild(card);
-});
+                    card.appendChild(time);
+                    list.appendChild(card);
+                });
 
                 ordersLoaded = true;
                 setStatus("โหลดประวัติออเดอร์สำเร็จ", "success");
