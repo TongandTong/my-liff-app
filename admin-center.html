@@ -8,10 +8,13 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
         body { font-family: 'Kanit', sans-serif; background-color: #0f172a; color: white; }
+        .hidden-section { display: none; }
+        .active-menu { border-color: #eab308; background-color: #1e293b; }
     </style>
 </head>
 <body class="p-4">
-    <div class="max-w-md mx-auto" id="app">
+    <div class="max-w-md mx-auto">
+        <!-- LOGIN -->
         <div id="loginSection" class="mt-20 bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
             <h1 class="text-2xl font-bold text-center text-yellow-400 mb-6">🔒 Admin Login</h1>
             <input
@@ -28,50 +31,221 @@
             >
                 เข้าสู่ระบบ
             </button>
-            <p id="status" class="mt-4 text-center text-sm font-bold text-red-400"></p>
+            <p id="status" class="mt-4 text-center text-sm font-bold"></p>
         </div>
 
-        <div id="dashboardSection" style="display: none;" class="mt-10">
-            <h1 class="text-3xl font-bold text-center text-yellow-400 mb-2">Admin Dashboard</h1>
-            <p class="text-center text-slate-400 mb-8">จัดการระบบ SocialBoost</p>
+        <!-- APP -->
+        <div id="appSection" style="display:none;" class="mt-8">
+            <div class="bg-slate-800 p-5 rounded-3xl border border-slate-700 shadow-2xl">
+                <div class="mb-5">
+                    <h1 class="text-3xl font-bold text-center text-yellow-400 mb-2">Admin Dashboard</h1>
+                    <p class="text-center text-slate-400 text-sm">จัดการระบบ SocialBoost</p>
+                </div>
 
-            <div class="space-y-4">
-                <a href="admin-override.html" class="block bg-slate-800 p-6 rounded-3xl border border-slate-700 hover:border-yellow-500 transition-all">
-                    <h3 class="text-xl font-bold text-white">⚡️ Manual Override</h3>
-                    <p class="text-sm text-slate-400">สั่งงานแมนนวลเมื่อระบบมีปัญหา</p>
-                </a>
+                <!-- MENU -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <button id="menu-dashboard" onclick="showPage('dashboard')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">
+                        🏠 Dashboard
+                    </button>
+                    <button id="menu-override" onclick="showPage('override')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">
+                        ⚡ Override
+                    </button>
+                    <button id="menu-orders" onclick="showPage('orders')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">
+                        📋 Orders
+                    </button>
+                    <button id="menu-report" onclick="showPage('report')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">
+                        📊 Report
+                    </button>
+                </div>
 
-                <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700">
-                    <div class="flex justify-between items-center mb-2 gap-3">
-                        <h3 class="text-xl font-bold text-white">💰 API Balance</h3>
-                        <button
-                            onclick="checkBalance()"
-                            id="btnCheck"
-                            class="bg-blue-600 hover:bg-blue-500 text-white text-xs py-2 px-4 rounded-xl transition-all"
-                        >
-                            กดเช็คเงิน
-                        </button>
+                <!-- PAGE: DASHBOARD -->
+                <div id="page-dashboard" class="page-section">
+                    <div class="space-y-4">
+                        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
+                            <div class="flex justify-between items-center mb-2 gap-3">
+                                <h3 class="text-xl font-bold text-white">💰 API Balance</h3>
+                                <button
+                                    onclick="checkBalance()"
+                                    id="btnCheckBalance"
+                                    class="bg-blue-600 hover:bg-blue-500 text-white text-xs py-2 px-4 rounded-xl transition-all"
+                                >
+                                    กดเช็คเงิน
+                                </button>
+                            </div>
+                            <p id="balanceShow" class="text-2xl font-bold text-green-400 mt-2">฿ --.--</p>
+                            <p class="text-xs text-slate-400 mt-1">ยอดเงินคงเหลือใน 24Social</p>
+                        </div>
+
+                        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
+                            <h3 class="text-xl font-bold text-white mb-3">📊 Sales Summary</h3>
+                            <div class="flex flex-col gap-3">
+                                <input
+                                    type="date"
+                                    id="summaryDate"
+                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white"
+                                >
+                                <button
+                                    onclick="getSummary()"
+                                    id="btnSummary"
+                                    class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl transition-all"
+                                >
+                                    ดูยอดขาย
+                                </button>
+                            </div>
+
+                            <div id="summaryResult" class="hidden mt-4 pt-4 border-t border-slate-700">
+                                <p class="text-sm text-slate-400">ยอดขายรวมของวันที่เลือก:</p>
+                                <p id="totalSalesShow" class="text-2xl font-bold text-yellow-400">฿ 0.00</p>
+                                <p id="summaryNote" class="text-xs text-slate-400 mt-2"></p>
+                            </div>
+                        </div>
                     </div>
-                    <p id="balanceShow" class="text-2xl font-bold text-green-400 mt-2">฿ --.--</p>
-                    <p class="text-xs text-slate-400 mt-1">ยอดเงินคงเหลือใน 24Social</p>
                 </div>
 
-                <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 opacity-50">
-                    <h3 class="text-xl font-bold text-white">📊 Sales Summary</h3>
-                    <p class="text-sm text-red-400">อยู่ระหว่างพัฒนา</p>
+                <!-- PAGE: OVERRIDE -->
+                <div id="page-override" class="page-section hidden-section">
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
+                        <h3 class="text-xl font-bold text-white mb-2">⚡ Manual Override</h3>
+                        <p class="text-sm text-slate-400 mb-5">ใช้ Order ID เพื่อสั่งงานแมนนวลเมื่อระบบอัตโนมัติมีปัญหา</p>
+
+                        <form id="adminForm" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">รหัสออเดอร์ (Order ID)</label>
+                                <input
+                                    type="text"
+                                    id="orderID"
+                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white"
+                                    placeholder="เช่น ORD2024XXXX"
+                                    maxlength="100"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Service ID</label>
+                                <select id="service" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white">
+                                    <option value="">-- กำลังโหลดบริการ... --</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">จำนวน</label>
+                                <input
+                                    type="number"
+                                    id="qty"
+                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white"
+                                    placeholder="จำนวน"
+                                    min="1"
+                                    step="1"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">ลิงก์งาน</label>
+                                <input
+                                    type="url"
+                                    id="link"
+                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white"
+                                    placeholder="https://..."
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">ผู้ดำเนินการ</label>
+                                <input
+                                    type="text"
+                                    id="operator"
+                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white"
+                                    placeholder="เช่น admin_nakorn"
+                                    maxlength="50"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">เหตุผลที่ Override</label>
+                                <textarea
+                                    id="adminNote"
+                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white min-h-[80px]"
+                                    placeholder="อธิบายสาเหตุที่ต้องสั่งงานแมนนวล"
+                                    maxlength="500"
+                                ></textarea>
+                            </div>
+
+                            <button
+                                type="submit"
+                                id="submitBtn"
+                                class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all"
+                            >
+                                ยืนยันการสั่งงาน
+                            </button>
+                        </form>
+                    </div>
                 </div>
+
+                <!-- PAGE: ORDERS -->
+                <div id="page-orders" class="page-section hidden-section">
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
+                        <div class="flex justify-between items-center mb-4 gap-3">
+                            <h3 class="text-xl font-bold text-white">📋 ประวัติออเดอร์</h3>
+                            <button
+                                onclick="loadOrders()"
+                                id="btnReloadOrders"
+                                class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 px-4 rounded-xl transition-all"
+                            >
+                                โหลดใหม่
+                            </button>
+                        </div>
+
+                        <div id="ordersLoading" class="hidden text-sm text-slate-400 mb-3">กำลังโหลดข้อมูล...</div>
+                        <div id="ordersEmpty" class="hidden text-sm text-slate-400 mb-3">ยังไม่พบข้อมูลออเดอร์</div>
+                        <div id="ordersList" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <!-- PAGE: REPORT -->
+                <div id="page-report" class="page-section hidden-section">
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
+                        <h3 class="text-xl font-bold text-white mb-3">📈 รายงานรายวัน</h3>
+                        <p class="text-sm text-slate-400 mb-4">ดูยอดขายรวมแบบเร็วจากข้อมูลระบบ</p>
+
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <input type="date" id="reportDateFrom" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
+                            <input type="date" id="reportDateTo" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
+                        </div>
+
+                        <button
+                            onclick="getRangeReport()"
+                            id="btnRangeReport"
+                            class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all"
+                        >
+                            ดูรายงานช่วงวันที่
+                        </button>
+
+                        <div id="rangeReportBox" class="hidden mt-4 pt-4 border-t border-slate-700">
+                            <p class="text-sm text-slate-400">ยอดรวมช่วงวันที่เลือก:</p>
+                            <p id="rangeSalesShow" class="text-2xl font-bold text-cyan-400">฿ 0.00</p>
+                            <p id="rangeReportNote" class="text-xs text-slate-400 mt-2"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="logout()" class="w-full mt-8 text-slate-500 text-sm">ออกจากระบบ</button>
             </div>
-
-            <button onclick="logout()" class="w-full mt-10 text-slate-500 text-sm">ออกจากระบบ</button>
         </div>
     </div>
 
     <script>
         const THE_KEY = "100818";
         const SESSION_KEY = "socialboost_admin_ok";
-        const WEBHOOK_URL = "https://hook.eu1.make.com/hnfwwdqx1daoy38zvflahwoe1o8mewpg";
 
-        function setStatus(message = "", type = "error") {
+        const BALANCE_WEBHOOK = "https://hook.eu1.make.com/hnfwwdqx1daoy38zvflahwoe1o8mewpg";
+        const SUMMARY_WEBHOOK = "https://hook.eu1.make.com/yc3vgozmud5crvt7kooewmvdi44mgf31";
+        const MANUAL_OVERRIDE_WEBHOOK = "https://hook.eu1.make.com/f77e3nr7tiwft9ow2ig710ksnga4ngjt";
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
+
+        let servicesLoaded = false;
+        let ordersLoaded = false;
+
+        function setStatus(message = "", type = "info") {
             const status = document.getElementById("status");
             if (!status) return;
 
@@ -79,10 +253,10 @@
 
             if (type === "success") {
                 status.classList.add("text-green-400");
-            } else if (type === "info") {
-                status.classList.add("text-slate-300");
-            } else {
+            } else if (type === "error") {
                 status.classList.add("text-red-400");
+            } else {
+                status.classList.add("text-slate-300");
             }
 
             status.textContent = message;
@@ -92,14 +266,49 @@
             setStatus("", "info");
         }
 
-        function showDashboard() {
-            document.getElementById("loginSection").style.display = "none";
-            document.getElementById("dashboardSection").style.display = "block";
+        function formatMoney(value) {
+            const num = Number(value);
+            if (!Number.isFinite(num)) return String(value);
+            return num.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function getTrimmedValue(id) {
+            const el = document.getElementById(id);
+            return el ? String(el.value || "").trim() : "";
+        }
+
+        function isPositiveInteger(value) {
+            return /^[1-9]\d*$/.test(String(value).trim());
+        }
+
+        function isValidHttpUrl(url) {
+            try {
+                const parsed = new URL(url);
+                return parsed.protocol === "http:" || parsed.protocol === "https:";
+            } catch (_) {
+                return false;
+            }
         }
 
         function showLogin() {
             document.getElementById("loginSection").style.display = "block";
-            document.getElementById("dashboardSection").style.display = "none";
+            document.getElementById("appSection").style.display = "none";
+        }
+
+        function showApp() {
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("appSection").style.display = "block";
+
+            const summaryDate = document.getElementById("summaryDate");
+            const reportDateFrom = document.getElementById("reportDateFrom");
+            const reportDateTo = document.getElementById("reportDateTo");
+
+            if (summaryDate && !summaryDate.value) summaryDate.valueAsDate = new Date();
+            if (reportDateFrom && !reportDateFrom.value) reportDateFrom.valueAsDate = new Date();
+            if (reportDateTo && !reportDateTo.value) reportDateTo.valueAsDate = new Date();
         }
 
         function requireSession() {
@@ -122,7 +331,8 @@
             if (pass === THE_KEY) {
                 sessionStorage.setItem(SESSION_KEY, "1");
                 clearStatus();
-                showDashboard();
+                showApp();
+                showPage("dashboard");
             } else {
                 setStatus("รหัสผ่านไม่ถูกต้อง", "error");
             }
@@ -131,15 +341,100 @@
         function logout() {
             sessionStorage.removeItem(SESSION_KEY);
             document.getElementById("passInput").value = "";
-            clearStatus();
             document.getElementById("balanceShow").textContent = "฿ --.--";
+            resetSummaryUI();
+            resetRangeReportUI();
+            clearStatus();
             showLogin();
+        }
+
+        function showPage(pageName) {
+            const pages = ["dashboard", "override", "orders", "report"];
+            pages.forEach(name => {
+                const page = document.getElementById("page-" + name);
+                const menu = document.getElementById("menu-" + name);
+
+                if (page) {
+                    page.classList.toggle("hidden-section", name !== pageName);
+                }
+
+                if (menu) {
+                    menu.classList.toggle("active-menu", name === pageName);
+                }
+            });
+
+            if (pageName === "override" && !servicesLoaded) {
+                loadServices();
+            }
+
+            if (pageName === "orders" && !ordersLoaded) {
+                loadOrders();
+            }
+        }
+
+        async function parseResponse(res) {
+            const rawText = await res.text();
+
+            if (!res.ok) {
+                throw new Error("Webhook Error (" + res.status + ")");
+            }
+
+            try {
+                return JSON.parse(rawText);
+            } catch (_) {
+                return rawText.trim();
+            }
+        }
+
+        function parseCSV(text) {
+            const rows = [];
+            let row = [];
+            let current = "";
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const next = text[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && next === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === "," && !inQuotes) {
+                    row.push(current);
+                    current = "";
+                } else if ((char === "\n" || char === "\r") && !inQuotes) {
+                    if (char === "\r" && next === "\n") i++;
+                    row.push(current);
+
+                    if (row.some(cell => String(cell).trim() !== "")) {
+                        rows.push(row);
+                    }
+
+                    row = [];
+                    current = "";
+                } else {
+                    current += char;
+                }
+            }
+
+            if (current.length > 0 || row.length > 0) {
+                row.push(current);
+                if (row.some(cell => String(cell).trim() !== "")) {
+                    rows.push(row);
+                }
+            }
+
+            return rows;
         }
 
         async function checkBalance() {
             if (!requireSession()) return;
 
-            const btn = document.getElementById("btnCheck");
+            const btn = document.getElementById("btnCheckBalance");
             const show = document.getElementById("balanceShow");
 
             btn.disabled = true;
@@ -148,18 +443,11 @@
             clearStatus();
 
             try {
-                const res = await fetch(WEBHOOK_URL, { method: "GET" });
-                const rawText = await res.text();
+                const res = await fetch(BALANCE_WEBHOOK, { method: "GET" });
+                const data = await parseResponse(res);
 
-                if (!res.ok) {
-                    throw new Error("Webhook Error (" + res.status + ")");
-                }
-
-                let data;
-                try {
-                    data = JSON.parse(rawText);
-                } catch (_) {
-                    throw new Error("รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
+                if (typeof data === "string") {
+                    throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
                 }
 
                 const balance =
@@ -170,18 +458,8 @@
                     data?.wallet;
 
                 if (balance !== undefined && balance !== null && balance !== "") {
-                    const numericBalance = Number(balance);
-
-                    if (Number.isFinite(numericBalance)) {
-                        show.textContent = "฿ " + numericBalance.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        });
-                        setStatus("เช็คยอดเงินสำเร็จ", "success");
-                    } else {
-                        show.textContent = "฿ " + String(balance);
-                        setStatus("เช็คยอดเงินสำเร็จ", "success");
-                    }
+                    show.textContent = "฿ " + formatMoney(balance);
+                    setStatus("เช็คยอดเงินสำเร็จ", "success");
                 } else {
                     show.textContent = "ไม่พบยอดเงิน";
                     setStatus("ไม่พบฟิลด์ยอดเงินในข้อมูลที่ Make ส่งกลับมา", "error");
@@ -195,13 +473,376 @@
             }
         }
 
-        window.onload = () => {
-            if (sessionStorage.getItem(SESSION_KEY) === "1") {
-                showDashboard();
-            } else {
-                showLogin();
+        function resetSummaryUI() {
+            document.getElementById("summaryResult").classList.add("hidden");
+            document.getElementById("totalSalesShow").textContent = "฿ 0.00";
+            document.getElementById("summaryNote").textContent = "";
+        }
+
+        async function getSummary() {
+            if (!requireSession()) return;
+
+            const dateInput = document.getElementById("summaryDate").value;
+            const btn = document.getElementById("btnSummary");
+            const resultArea = document.getElementById("summaryResult");
+            const show = document.getElementById("totalSalesShow");
+            const summaryNote = document.getElementById("summaryNote");
+
+            if (!dateInput) {
+                setStatus("กรุณาเลือกวันที่ก่อนดูยอดขาย", "error");
+                resetSummaryUI();
+                return;
             }
-        };
+
+            btn.disabled = true;
+            btn.textContent = "⌛ กำลังคำนวณ...";
+            clearStatus();
+
+            resultArea.classList.remove("hidden");
+            show.textContent = "฿ ...";
+            summaryNote.textContent = "กำลังโหลดข้อมูล...";
+
+            try {
+                const url = `${SUMMARY_WEBHOOK}?date=${encodeURIComponent(dateInput)}`;
+                const res = await fetch(url, { method: "GET" });
+                const data = await parseResponse(res);
+
+                if (typeof data === "string") {
+                    throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
+                }
+
+                const totalSales =
+                    data?.sum_money ??
+                    data?.total_sales ??
+                    data?.sales ??
+                    data?.amount ??
+                    data?.total;
+
+                if (totalSales !== undefined && totalSales !== null && totalSales !== "") {
+                    show.textContent = "฿ " + formatMoney(totalSales);
+                    summaryNote.textContent = "อัปเดตจากข้อมูลของวันที่เลือกแล้ว";
+                    setStatus("โหลดสรุปยอดสำเร็จ", "success");
+                } else {
+                    show.textContent = "฿ 0.00";
+                    summaryNote.textContent = "ไม่พบข้อมูลยอดขายของวันที่เลือก";
+                    setStatus("ไม่พบข้อมูลยอดขายของวันที่เลือก", "info");
+                }
+            } catch (err) {
+                show.textContent = "฿ 0.00";
+                summaryNote.textContent = "ไม่สามารถโหลดข้อมูลสรุปยอดได้";
+                setStatus(err?.message || "เชื่อมต่อ Make ไม่สำเร็จ", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "ดูยอดขาย";
+            }
+        }
+
+        function resetRangeReportUI() {
+            document.getElementById("rangeReportBox").classList.add("hidden");
+            document.getElementById("rangeSalesShow").textContent = "฿ 0.00";
+            document.getElementById("rangeReportNote").textContent = "";
+        }
+
+        async function getRangeReport() {
+            if (!requireSession()) return;
+
+            const dateFrom = document.getElementById("reportDateFrom").value;
+            const dateTo = document.getElementById("reportDateTo").value;
+            const btn = document.getElementById("btnRangeReport");
+            const box = document.getElementById("rangeReportBox");
+            const show = document.getElementById("rangeSalesShow");
+            const note = document.getElementById("rangeReportNote");
+
+            if (!dateFrom || !dateTo) {
+                setStatus("กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด", "error");
+                resetRangeReportUI();
+                return;
+            }
+
+            if (dateFrom > dateTo) {
+                setStatus("วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด", "error");
+                resetRangeReportUI();
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "⌛ กำลังประมวลผล...";
+            clearStatus();
+
+            box.classList.remove("hidden");
+            show.textContent = "฿ ...";
+            note.textContent = "กำลังโหลดข้อมูล...";
+
+            try {
+                const url = `${SUMMARY_WEBHOOK}?date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`;
+                const res = await fetch(url, { method: "GET" });
+                const data = await parseResponse(res);
+
+                if (typeof data === "string") {
+                    throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
+                }
+
+                const totalSales =
+                    data?.sum_money ??
+                    data?.total_sales ??
+                    data?.sales ??
+                    data?.amount ??
+                    data?.total;
+
+                if (totalSales !== undefined && totalSales !== null && totalSales !== "") {
+                    show.textContent = "฿ " + formatMoney(totalSales);
+                    note.textContent = `สรุปยอดช่วงวันที่ ${dateFrom} ถึง ${dateTo}`;
+                    setStatus("โหลดรายงานช่วงวันที่สำเร็จ", "success");
+                } else {
+                    show.textContent = "฿ 0.00";
+                    note.textContent = "ไม่พบข้อมูลในช่วงวันที่เลือก";
+                    setStatus("ไม่พบข้อมูลในช่วงวันที่เลือก", "info");
+                }
+            } catch (err) {
+                show.textContent = "฿ 0.00";
+                note.textContent = "ไม่สามารถโหลดรายงานช่วงวันที่ได้";
+                setStatus(err?.message || "เชื่อมต่อ Make ไม่สำเร็จ", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "ดูรายงานช่วงวันที่";
+            }
+        }
+
+        async function loadServices() {
+            const serviceSelect = document.getElementById("service");
+            if (!serviceSelect) return;
+
+            try {
+                serviceSelect.innerHTML = '<option value="">-- กำลังโหลดบริการ... --</option>';
+
+                const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+                if (!response.ok) {
+                    throw new Error("โหลดข้อมูลบริการไม่สำเร็จ");
+                }
+
+                const csvText = await response.text();
+                const rows = parseCSV(csvText);
+
+                if (!rows.length || rows.length === 1) {
+                    throw new Error("ไม่พบข้อมูลบริการ");
+                }
+
+                const dataRows = rows.slice(1);
+                const seen = new Set();
+
+                serviceSelect.innerHTML = '<option value="">-- เลือกบริการ --</option>';
+
+                dataRows.forEach(cols => {
+                    const platform = String(cols[1] || "").trim();
+                    const serviceName = String(cols[2] || "").trim();
+                    const serviceId24 = String(cols[6] || "").trim();
+
+                    if (!platform || !serviceName || !serviceId24) return;
+                    if (seen.has(serviceId24)) return;
+
+                    seen.add(serviceId24);
+
+                    const option = document.createElement("option");
+                    option.value = serviceId24;
+                    option.textContent = `${platform} - ${serviceName} (${serviceId24})`;
+                    serviceSelect.appendChild(option);
+                });
+
+                servicesLoaded = true;
+
+                if (serviceSelect.options.length <= 1) {
+                    setStatus("ไม่พบบริการในชีต", "error");
+                }
+            } catch (err) {
+                serviceSelect.innerHTML = '<option value="">-- โหลดบริการไม่สำเร็จ --</option>';
+                setStatus("โหลดรายการบริการไม่สำเร็จ: " + (err.message || err), "error");
+            }
+        }
+
+        function validateOverrideForm() {
+            const orderID = getTrimmedValue("orderID");
+            const service = getTrimmedValue("service");
+            const qty = getTrimmedValue("qty");
+            const link = getTrimmedValue("link");
+            const operator = getTrimmedValue("operator");
+            const adminNote = getTrimmedValue("adminNote");
+
+            if (!orderID || orderID.length < 4) return "กรุณากรอกรหัสออเดอร์ให้ถูกต้อง";
+            if (!service) return "กรุณาเลือกบริการ";
+            if (!isPositiveInteger(qty)) return "จำนวนต้องเป็นจำนวนเต็มที่มากกว่า 0";
+            if (!isValidHttpUrl(link)) return "กรุณากรอกลิงก์งานให้ถูกต้อง";
+            if (!operator) return "กรุณากรอกชื่อผู้ดำเนินการ";
+            if (!adminNote) return "กรุณากรอกเหตุผลที่ override";
+
+            return "";
+        }
+
+        async function submitOverrideForm(e) {
+            e.preventDefault();
+
+            if (!requireSession()) return;
+
+            const validationError = validateOverrideForm();
+            if (validationError) {
+                setStatus(validationError, "error");
+                return;
+            }
+
+            const btn = document.getElementById("submitBtn");
+            btn.disabled = true;
+            btn.textContent = "⌛ กำลังส่งข้อมูล...";
+            clearStatus();
+
+            const payload = {
+                admin_secret: THE_KEY,
+                orderID: getTrimmedValue("orderID"),
+                service: getTrimmedValue("service"),
+                qty: Number(getTrimmedValue("qty")),
+                link: getTrimmedValue("link"),
+                operator: getTrimmedValue("operator"),
+                admin_note: getTrimmedValue("adminNote"),
+                method: "admin_manual",
+                requested_at: new Date().toISOString()
+            };
+
+            try {
+                const res = await fetch(MANUAL_OVERRIDE_WEBHOOK, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await parseResponse(res);
+
+                if (typeof data === "string") {
+                    const lower = data.toLowerCase();
+                    if (data === "OK" || lower === "success") {
+                        setStatus("ส่งคำสั่งแมนนวลเรียบร้อย", "success");
+                        document.getElementById("adminForm").reset();
+                        return;
+                    }
+                    throw new Error(data || "ระบบตอบกลับไม่ถูกต้อง");
+                }
+
+                const success =
+                    data?.success === true ||
+                    data?.status === "success" ||
+                    data?.status === "SUCCESS" ||
+                    data?.status === "OK";
+
+                const message = data?.message || data?.detail || data?.error || "";
+
+                if (success) {
+                    setStatus(message || "ส่งคำสั่งแมนนวลเรียบร้อย", "success");
+                    document.getElementById("adminForm").reset();
+                } else {
+                    throw new Error(message || "ระบบไม่สามารถสั่งงานได้");
+                }
+            } catch (err) {
+                setStatus(err?.message || "ส่งคำสั่งไม่สำเร็จ", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "ยืนยันการสั่งงาน";
+            }
+        }
+
+        async function loadOrders() {
+            if (!requireSession()) return;
+
+            const loading = document.getElementById("ordersLoading");
+            const empty = document.getElementById("ordersEmpty");
+            const list = document.getElementById("ordersList");
+            const btn = document.getElementById("btnReloadOrders");
+
+            btn.disabled = true;
+            loading.classList.remove("hidden");
+            empty.classList.add("hidden");
+            list.innerHTML = "";
+            clearStatus();
+
+            try {
+                const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+                if (!response.ok) {
+                    throw new Error("โหลดข้อมูลออเดอร์ไม่สำเร็จ");
+                }
+
+                const csvText = await response.text();
+                const rows = parseCSV(csvText);
+
+                if (!rows.length || rows.length <= 1) {
+                    empty.classList.remove("hidden");
+                    ordersLoaded = true;
+                    return;
+                }
+
+                const dataRows = rows.slice(1).reverse().slice(0, 20);
+
+                if (dataRows.length === 0) {
+                    empty.classList.remove("hidden");
+                    ordersLoaded = true;
+                    return;
+                }
+
+                dataRows.forEach(cols => {
+    const createdAt = String(cols[0] || "-").trim();       // A = Date/Time
+    const customerName = String(cols[1] || "-").trim();    // B = Customer Name
+    const platform = String(cols[2] || "-").trim();        // C = Platform
+    const serviceName = String(cols[3] || "-").trim();     // D = Service Name
+    const qty = String(cols[4] || "0").trim();             // E = Quantity
+    const price = String(cols[5] || "0").trim();           // F = Total Price
+    const link = String(cols[6] || "").trim();             // G = Link (URL)
+    const serviceId = String(cols[7] || "N/A").trim();     // H = Service ID
+    const orderId = String(cols[12] || "N/A").trim();      // M = Order ID
+
+    const card = document.createElement("div");
+    card.className = "bg-slate-800 border border-slate-700 rounded-xl p-3";
+
+    const title = document.createElement("p");
+    title.className = "font-bold text-white";
+    title.textContent = `${platform} - ${serviceName}`;
+
+    const meta = document.createElement("p");
+    meta.className = "text-sm text-slate-400 mt-1";
+    meta.textContent = `Order ID: ${orderId} | ลูกค้า: ${customerName}`;
+
+    const sub = document.createElement("p");
+    sub.className = "text-sm text-slate-400 mt-1";
+    sub.textContent = `Qty: ${qty} | Price: ฿${formatMoney(price)} | Service ID: ${serviceId}`;
+
+    const time = document.createElement("p");
+    time.className = "text-xs text-slate-500 mt-2";
+    time.textContent = createdAt;
+
+    card.appendChild(title);
+    card.appendChild(meta);
+    card.appendChild(sub);
+
+    if (link) {
+        const linkEl = document.createElement("a");
+        linkEl.href = link;
+        linkEl.target = "_blank";
+        linkEl.rel = "noopener noreferrer";
+        linkEl.className = "text-xs text-blue-400 underline break-all block mt-2";
+        linkEl.textContent = link;
+        card.appendChild(linkEl);
+    }
+
+    card.appendChild(time);
+    list.appendChild(card);
+});
+
+                ordersLoaded = true;
+                setStatus("โหลดประวัติออเดอร์สำเร็จ", "success");
+            } catch (err) {
+                empty.classList.remove("hidden");
+                setStatus(err?.message || "โหลดออเดอร์ไม่สำเร็จ", "error");
+            } finally {
+                loading.classList.add("hidden");
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById("adminForm").addEventListener("submit", submitOverrideForm);
 
         document.getElementById("passInput").addEventListener("keydown", function(e) {
             if (e.key === "Enter") {
@@ -210,9 +851,33 @@
             }
         });
 
-        document.getElementById("passInput").addEventListener("input", function() {
-            clearStatus();
+        [
+            "passInput",
+            "summaryDate",
+            "reportDateFrom",
+            "reportDateTo",
+            "orderID",
+            "service",
+            "qty",
+            "link",
+            "operator",
+            "adminNote"
+        ].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener("input", clearStatus);
+                el.addEventListener("change", clearStatus);
+            }
         });
+
+        window.onload = function() {
+            if (sessionStorage.getItem(SESSION_KEY) === "1") {
+                showApp();
+                showPage("dashboard");
+            } else {
+                showLogin();
+            }
+        };
     </script>
 </body>
 </html>
