@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialBoost - Admin Area (Order Search)</title>
+    <title>SocialBoost - Manual Override</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
@@ -12,27 +12,17 @@
 </head>
 <body class="p-4">
     <div class="max-w-md mx-auto">
-        <div id="loginArea" class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700 mt-10">
-            <h2 class="text-xl font-bold text-center text-red-400 mb-6">🔒 แอดมินยืนยันตัวตน</h2>
-            <input
-                type="password"
-                id="adminPass"
-                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white mb-4"
-                placeholder="กรอกรหัสผ่านแอดมิน"
-                autocomplete="current-password"
-            >
-            <button
-                id="loginBtn"
-                onclick="checkPass()"
-                class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl transition-all"
-            >
-                เข้าสู่ระบบ
-            </button>
-        </div>
+        <div id="adminArea" class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700 mt-10">
+            <div class="flex items-center justify-between mb-2 gap-2">
+                <a
+                    href="admin.html"
+                    class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-xl"
+                >
+                    ← กลับ Dashboard
+                </a>
 
-        <div id="adminArea" style="display: none;" class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700 mt-10">
-            <div class="flex items-center justify-between mb-2">
-                <h2 class="text-2xl font-bold text-yellow-400">🛠 Admin Override</h2>
+                <h2 class="text-2xl font-bold text-yellow-400 text-center flex-1">🛠 Manual Override</h2>
+
                 <button
                     type="button"
                     onclick="logoutAdmin()"
@@ -127,10 +117,13 @@
     </div>
 
     <script>
-        const THE_KEY = "100818";
         const ADMIN_WEBHOOK = "https://hook.eu1.make.com/f77e3nr7tiwft9ow2ig710ksnga4ngjt";
+        const ADMIN_SECRET = "100818";
         const SESSION_KEY = "socialboost_admin_ok";
+        const DASHBOARD_URL = "admin-center.html";
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
+
+        let servicesLoaded = false;
 
         function setStatus(message, type = "info") {
             const status = document.getElementById("status");
@@ -153,17 +146,6 @@
             setStatus("", "info");
         }
 
-        function showAdminArea() {
-            document.getElementById("loginArea").style.display = "none";
-            document.getElementById("adminArea").style.display = "block";
-            loadServices();
-        }
-
-        function showLoginArea() {
-            document.getElementById("loginArea").style.display = "block";
-            document.getElementById("adminArea").style.display = "none";
-        }
-
         function getTrimmedValue(id) {
             const el = document.getElementById(id);
             return el ? String(el.value || "").trim() : "";
@@ -182,42 +164,17 @@
             }
         }
 
-        function checkPass() {
-            const pass = getTrimmedValue("adminPass");
-
-            if (!pass) {
-                setStatus("กรุณากรอกรหัสผ่านแอดมิน", "error");
-                return;
+        function requireSession() {
+            if (sessionStorage.getItem(SESSION_KEY) !== "1") {
+                window.location.href = DASHBOARD_URL;
+                return false;
             }
-
-            if (pass === THE_KEY) {
-                sessionStorage.setItem(SESSION_KEY, "1");
-                showAdminArea();
-                setStatus("เข้าสู่ระบบสำเร็จ", "success");
-            } else {
-                setStatus("รหัสผ่านไม่ถูกต้อง", "error");
-            }
+            return true;
         }
 
         function logoutAdmin() {
             sessionStorage.removeItem(SESSION_KEY);
-
-            const form = document.getElementById("adminForm");
-            if (form) form.reset();
-
-            const passInput = document.getElementById("adminPass");
-            if (passInput) passInput.value = "";
-
-            showLoginArea();
-            setStatus("ออกจากระบบแล้ว", "info");
-        }
-
-        function restoreSession() {
-            if (sessionStorage.getItem(SESSION_KEY) === "1") {
-                showAdminArea();
-            } else {
-                showLoginArea();
-            }
+            window.location.href = DASHBOARD_URL;
         }
 
         function parseCSV(text) {
@@ -308,7 +265,10 @@
                 if (serviceSelect.options.length <= 1) {
                     serviceSelect.innerHTML = '<option value="">-- ไม่พบบริการที่ใช้งานได้ --</option>';
                     setStatus("ไม่พบบริการในชีต", "error");
+                    return;
                 }
+
+                servicesLoaded = true;
             } catch (err) {
                 serviceSelect.innerHTML = '<option value="">-- โหลดบริการไม่สำเร็จ --</option>';
                 setStatus("โหลดรายการบริการไม่สำเร็จ: " + (err.message || err), "error");
@@ -353,11 +313,7 @@
         async function submitAdminForm(e) {
             e.preventDefault();
 
-            if (sessionStorage.getItem(SESSION_KEY) !== "1") {
-                setStatus("session หมดอายุ กรุณาเข้าสู่ระบบใหม่", "error");
-                logoutAdmin();
-                return;
-            }
+            if (!requireSession()) return;
 
             const validationError = validateForm();
             if (validationError) {
@@ -370,7 +326,7 @@
             btn.textContent = "⏳ กำลังส่งข้อมูล...";
 
             const payload = {
-                password: THE_KEY,
+                admin_secret: ADMIN_SECRET,
                 orderID: getTrimmedValue("orderID"),
                 service: getTrimmedValue("service"),
                 qty: Number(getTrimmedValue("qty")),
@@ -448,16 +404,7 @@
 
         document.getElementById("adminForm").addEventListener("submit", submitAdminForm);
 
-        const adminPassInput = document.getElementById("adminPass");
-        adminPassInput.addEventListener("keydown", function(e) {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                checkPass();
-            }
-        });
-
         [
-            "adminPass",
             "orderID",
             "service",
             "qty",
@@ -472,7 +419,13 @@
             }
         });
 
-        window.onload = restoreSession;
+        window.onload = async function() {
+            if (!requireSession()) return;
+
+            if (!servicesLoaded) {
+                await loadServices();
+            }
+        };
     </script>
 </body>
 </html>
