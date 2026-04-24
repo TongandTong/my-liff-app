@@ -9,6 +9,11 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
         body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; }
+        .pay-method-btn.active {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
     </style>
 </head>
 <body class="p-4">
@@ -56,27 +61,49 @@
             <button onclick="goToPayment()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">ไปหน้าชำระเงิน</button>
         </div>
 
-        <div id="slipSection" style="display: none;">
+        <div id="paymentSection" style="display: none;">
             <button onclick="backToOrder()" class="text-blue-600 text-sm mb-4">← ย้อนกลับไปแก้ไข</button>
-            <h3 class="text-lg font-bold mb-4">💳 ชำระเงิน</h3>
+            <h3 class="text-lg font-bold mb-4">💳 เลือกวิธีชำระเงิน</h3>
 
-            <div class="bg-blue-600 text-white p-4 rounded-xl mb-4 shadow-md">
-                <p class="text-xs opacity-80">บัญชีรับเงิน (PromptPay)</p>
-                <p class="text-xl font-bold tracking-widest">750-218-3456</p>
-                <p class="text-sm">ชื่อบัญชี: นาย นคร เมฆพะโยม</p>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button id="methodStripeBtn" type="button" onclick="selectPaymentMethod('stripe_qr')" class="pay-method-btn active w-full border-2 border-gray-200 rounded-xl p-3 text-left transition">
+                    <div class="font-bold">สแกน QR อัตโนมัติ</div>
+                    <div class="text-xs text-gray-500 mt-1">Stripe PromptPay</div>
+                </button>
+                <button id="methodManualBtn" type="button" onclick="selectPaymentMethod('manual_transfer')" class="pay-method-btn w-full border-2 border-gray-200 rounded-xl p-3 text-left transition">
+                    <div class="font-bold">โอนเอง + แนบสลิป</div>
+                    <div class="text-xs text-gray-500 mt-1">ตรวจสลิปอัตโนมัติ</div>
+                </button>
             </div>
 
             <div class="bg-gray-100 p-4 rounded-lg text-center mb-4">
-                <p class="text-sm text-gray-500">ยอดที่ต้องโอน:</p>
+                <p class="text-sm text-gray-500">ยอดที่ต้องชำระ:</p>
                 <p class="text-xl font-bold text-red-500">฿ <span id="finalAmount">0.00</span></p>
+                <p id="stripeMinNotice" class="text-xs text-orange-600 mt-2 hidden">QR อัตโนมัติใช้ได้เมื่อยอดตั้งแต่ 10 บาทขึ้นไป</p>
             </div>
 
-            <div class="mb-6">
-                <label class="block text-gray-700 mb-2 font-semibold">อัปโหลดรูปสลิป</label>
-                <input type="file" id="slipFile" accept="image/*" class="w-full border border-dashed border-gray-400 p-4 rounded-lg">
+            <div id="stripeSection" class="mb-4">
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-4">
+                    <p class="font-semibold text-blue-700">ชำระผ่าน Stripe PromptPay QR</p>
+                    <p class="text-sm text-gray-600 mt-1">ระบบจะสร้าง QR ตามยอดอัตโนมัติและล็อกยอดให้ลูกค้า</p>
+                </div>
+                <button id="createStripePaymentBtn" onclick="createStripePayment()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">สร้าง QR เพื่อชำระเงิน</button>
             </div>
 
-            <button id="submitBtn" onclick="submitOrder()" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition">ยืนยันการโอนเงิน</button>
+            <div id="manualSection" style="display:none;">
+                <div class="bg-blue-600 text-white p-4 rounded-xl mb-4 shadow-md">
+                    <p class="text-xs opacity-80">บัญชีรับเงิน (PromptPay)</p>
+                    <p class="text-xl font-bold tracking-widest">750-218-3456</p>
+                    <p class="text-sm">ชื่อบัญชี: นาย นคร เมฆพะโยม</p>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2 font-semibold">อัปโหลดรูปสลิป</label>
+                    <input type="file" id="slipFile" accept="image/*" class="w-full border border-dashed border-gray-400 p-4 rounded-lg">
+                </div>
+
+                <button id="submitBtn" onclick="submitManualOrder()" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition">ยืนยันการโอนเงิน</button>
+            </div>
         </div>
     </div>
 
@@ -86,6 +113,7 @@
         const webhookUrl = "https://hook.eu1.make.com/uoixikfgbu10pc959jf2t8mroihi4mky";
 
         let allServices = [];
+        let selectedPaymentMethod = "stripe_qr";
 
         window.onerror = function(msg, url, line) {
             alert("❌ เกิดข้อผิดพลาด: " + msg + "\nบรรทัดที่: " + line);
@@ -114,41 +142,29 @@
         async function loadSheetData() {
             try {
                 const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
-                if (!response.ok) {
-                    throw new Error("ไม่สามารถโหลดข้อมูลบริการได้ (" + response.status + ")");
-                }
+                if (!response.ok) throw new Error("ไม่สามารถโหลดข้อมูลบริการได้ (" + response.status + ")");
 
                 const text = await response.text();
                 const rows = parseCSV(text);
-
-                if (!rows.length || rows.length === 1) {
-                    throw new Error("ไม่พบข้อมูลบริการใน Google Sheet");
-                }
+                if (!rows.length || rows.length === 1) throw new Error("ไม่พบข้อมูลบริการใน Google Sheet");
 
                 const dataRows = rows.slice(1);
-
                 allServices = dataRows.map(cols => ({
-                    id: String(cols[0] || "").trim(),           // A = ID
-                    platform: String(cols[1] || "").trim(),     // B = Platform
-                    category: String(cols[2] || "").trim() || "ทั่วไป", // C = Category
-                    min: parseInt(cols[3], 10) || 0,            // D = Min_Qty
-                    max: parseInt(cols[4], 10) || 0,            // E = Max_Qty
-                    price: parseFloat(cols[5]) || 0,            // F = Price_Per_1
-                    id_24social: String(cols[6] || "").trim(),  // G = ID_24Social
-                    name: String(cols[7] || "").trim()          // H = Service Name
+                    id: String(cols[0] || "").trim(),
+                    platform: String(cols[1] || "").trim(),
+                    category: String(cols[2] || "").trim() || "ทั่วไป",
+                    min: parseInt(cols[3], 10) || 0,
+                    max: parseInt(cols[4], 10) || 0,
+                    price: parseFloat(cols[5]) || 0,
+                    id_24social: String(cols[6] || "").trim(),
+                    name: String(cols[7] || "").trim()
                 })).filter(s => s.id && s.platform && s.name);
 
                 const platforms = [...new Set(allServices.map(s => s.platform))];
                 const pSelect = document.getElementById("platformSelect");
-
-                if (!pSelect) return;
-
                 pSelect.innerHTML = "";
                 appendOption(pSelect, "", "-- เลือก Platform --");
-
-                platforms.forEach(platform => {
-                    appendOption(pSelect, platform, platform);
-                });
+                platforms.forEach(platform => appendOption(pSelect, platform, platform));
 
                 resetCategorySelect();
                 resetServiceSelect();
@@ -163,41 +179,27 @@
             let row = [];
             let current = "";
             let inQuotes = false;
-
             for (let i = 0; i < text.length; i++) {
                 const char = text[i];
                 const next = text[i + 1];
-
                 if (char === '"') {
-                    if (inQuotes && next === '"') {
-                        current += '"';
-                        i++;
-                    } else {
-                        inQuotes = !inQuotes;
-                    }
+                    if (inQuotes && next === '"') { current += '"'; i++; }
+                    else inQuotes = !inQuotes;
                 } else if (char === "," && !inQuotes) {
-                    row.push(current);
-                    current = "";
+                    row.push(current); current = "";
                 } else if ((char === "\n" || char === "\r") && !inQuotes) {
                     if (char === "\r" && next === "\n") i++;
                     row.push(current);
-                    if (row.some(cell => String(cell).trim() !== "")) {
-                        rows.push(row);
-                    }
-                    row = [];
-                    current = "";
+                    if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
+                    row = []; current = "";
                 } else {
                     current += char;
                 }
             }
-
             if (current.length > 0 || row.length > 0) {
                 row.push(current);
-                if (row.some(cell => String(cell).trim() !== "")) {
-                    rows.push(row);
-                }
+                if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
             }
-
             return rows;
         }
 
@@ -210,8 +212,6 @@
 
         function resetCategorySelect() {
             const cSelect = document.getElementById("categorySelect");
-            if (!cSelect) return;
-
             cSelect.innerHTML = "";
             appendOption(cSelect, "", "-- เลือก Platform ก่อน --");
             cSelect.disabled = true;
@@ -219,117 +219,81 @@
 
         function resetServiceSelect() {
             const sSelect = document.getElementById("serviceSelect");
-            if (!sSelect) return;
-
             sSelect.innerHTML = "";
             appendOption(sSelect, "", "-- เลือกหมวดหมู่ก่อน --");
             sSelect.disabled = true;
         }
 
         function clearOrderInfo() {
-            const limitNote = document.getElementById("limitNote");
-            const quantity = document.getElementById("quantity");
-
-            if (limitNote) limitNote.textContent = "";
-            if (quantity) quantity.value = "";
-
+            document.getElementById("limitNote").textContent = "";
+            document.getElementById("quantity").value = "";
             setMoney("totalPrice", 0);
             setMoney("finalAmount", 0);
+            updatePaymentMethodUI();
         }
 
         function filterCategories() {
-            const platform = (document.getElementById("platformSelect") || {}).value || "";
+            const platform = document.getElementById("platformSelect").value || "";
             const cSelect = document.getElementById("categorySelect");
-
             resetServiceSelect();
             clearOrderInfo();
-
-            if (!cSelect) return;
-
             cSelect.innerHTML = "";
             appendOption(cSelect, "", "-- เลือกหมวดหมู่ --");
-
             if (!platform) {
                 cSelect.innerHTML = "";
                 appendOption(cSelect, "", "-- เลือก Platform ก่อน --");
                 cSelect.disabled = true;
                 return;
             }
-
-            const categories = [...new Set(
-                allServices
-                    .filter(service => service.platform === platform)
-                    .map(service => service.category || "ทั่วไป")
-            )];
-
-            categories.forEach(category => {
-                appendOption(cSelect, category, category);
-            });
-
+            const categories = [...new Set(allServices.filter(service => service.platform === platform).map(service => service.category || "ทั่วไป"))];
+            categories.forEach(category => appendOption(cSelect, category, category));
             cSelect.disabled = false;
         }
 
         function filterServices() {
-            const platform = (document.getElementById("platformSelect") || {}).value || "";
-            const category = (document.getElementById("categorySelect") || {}).value || "";
+            const platform = document.getElementById("platformSelect").value || "";
+            const category = document.getElementById("categorySelect").value || "";
             const sSelect = document.getElementById("serviceSelect");
-
-            if (!sSelect) return;
-
             sSelect.innerHTML = "";
             appendOption(sSelect, "", "-- เลือกบริการ --");
-
             clearOrderInfo();
-
             if (!platform || !category) {
                 sSelect.disabled = true;
                 return;
             }
-
             allServices
                 .filter(service => service.platform === platform && (service.category || "ทั่วไป") === category)
                 .forEach(service => appendOption(sSelect, service.id, service.name));
-
             sSelect.disabled = false;
         }
 
         function updateMinMax() {
-            const sid = (document.getElementById("serviceSelect") || {}).value || "";
-            const service = allServices.find(s => s.id === sid);
+            const service = getSelectedService();
             const limitNote = document.getElementById("limitNote");
-
-            if (service && limitNote) {
-                limitNote.textContent = "💡 ขั้นต่ำ: " + service.min.toLocaleString() + " | สูงสุด: " + service.max.toLocaleString();
-            } else if (limitNote) {
-                limitNote.textContent = "";
-            }
-
+            limitNote.textContent = service ? `💡 ขั้นต่ำ: ${service.min.toLocaleString()} | สูงสุด: ${service.max.toLocaleString()}` : "";
             calculatePrice();
         }
 
         function calculatePrice() {
-            const sid = (document.getElementById("serviceSelect") || {}).value || "";
-            const qtyInput = (document.getElementById("quantity") || {}).value || "";
-            const qty = Number(qtyInput);
-            const service = allServices.find(s => s.id === sid);
-
+            const service = getSelectedService();
+            const qty = Number(document.getElementById("quantity").value || 0);
             let total = 0;
-            if (service && Number.isFinite(qty) && qty > 0) {
-                total = (qty * service.price) / 1000;
-            }
-
+            if (service && Number.isFinite(qty) && qty > 0) total = (qty * service.price) / 1000;
             setMoney("totalPrice", total);
             setMoney("finalAmount", total);
+            updatePaymentMethodUI();
+        }
+
+        function getTotalPriceNumber() {
+            const service = getSelectedService();
+            const qty = Number(document.getElementById("quantity").value || 0);
+            if (!service || !Number.isFinite(qty) || qty <= 0) return 0;
+            return Number(((qty * service.price) / 1000).toFixed(2));
         }
 
         function setMoney(elementId, amount) {
             const el = document.getElementById(elementId);
-            if (!el) return;
-
-            el.textContent = Number(amount || 0).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+            el.textContent = Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function isPositiveInteger(value) {
@@ -346,167 +310,138 @@
         }
 
         function getSelectedService() {
-            const sid = (document.getElementById("serviceSelect") || {}).value || "";
+            const sid = document.getElementById("serviceSelect").value || "";
             return allServices.find(s => s.id === sid) || null;
         }
 
-        function goToPayment() {
+        function validateOrderFields() {
             const service = getSelectedService();
-            const qtyInput = (document.getElementById("quantity") || {}).value || "";
+            const qtyInput = document.getElementById("quantity").value || "";
             const qty = Number(qtyInput);
-            const link = ((document.getElementById("targetLink") || {}).value || "").trim();
+            const link = (document.getElementById("targetLink").value || "").trim();
 
-            if (!service) {
-                alert("❌ กรุณาเลือกบริการ");
+            if (!service) return { ok: false, message: "กรุณาเลือกบริการ" };
+            if (!isPositiveInteger(qtyInput)) return { ok: false, message: "กรุณากรอกจำนวนเป็นเลขจำนวนเต็มที่มากกว่า 0" };
+            if (qty < service.min) return { ok: false, message: `จำนวนต่ำกว่าขั้นต่ำที่กำหนด (${service.min.toLocaleString()})` };
+            if (qty > service.max) return { ok: false, message: `จำนวนเกินกว่าขั้นสูงสุดที่กำหนด (${service.max.toLocaleString()})` };
+            if (!link) return { ok: false, message: "กรุณากรอกลิงก์งาน" };
+            if (!isValidHttpUrl(link)) return { ok: false, message: "กรุณากรอกลิงก์ให้ถูกต้อง" };
+            return { ok: true };
+        }
+
+        function goToPayment() {
+            const validation = validateOrderFields();
+            if (!validation.ok) {
+                alert("❌ " + validation.message);
                 return;
             }
-
-            if (!isPositiveInteger(qtyInput)) {
-                alert("❌ กรุณากรอกจำนวนเป็นเลขจำนวนเต็มที่มากกว่า 0");
-                return;
-            }
-
-            if (qty < service.min) {
-                alert("❌ จำนวนต่ำกว่าขั้นต่ำที่กำหนด (" + service.min.toLocaleString() + ")");
-                return;
-            }
-
-            if (qty > service.max) {
-                alert("❌ จำนวนเกินกว่าขั้นสูงสุดที่กำหนด (" + service.max.toLocaleString() + ")");
-                return;
-            }
-
-            if (!link) {
-                alert("❌ กรุณากรอกลิงก์งาน");
-                return;
-            }
-
-            if (!isValidHttpUrl(link)) {
-                alert("❌ กรุณากรอกลิงก์ให้ถูกต้อง");
-                return;
-            }
-
             document.getElementById("orderSection").style.display = "none";
-            document.getElementById("slipSection").style.display = "block";
+            document.getElementById("paymentSection").style.display = "block";
+            updatePaymentMethodUI();
         }
 
         function backToOrder() {
             document.getElementById("orderSection").style.display = "block";
-            document.getElementById("slipSection").style.display = "none";
+            document.getElementById("paymentSection").style.display = "none";
+        }
+
+        function selectPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            updatePaymentMethodUI();
+        }
+
+        function updatePaymentMethodUI() {
+            const total = getTotalPriceNumber();
+            const stripeAllowed = total >= 10;
+            const stripeBtn = document.getElementById("methodStripeBtn");
+            const manualBtn = document.getElementById("methodManualBtn");
+            const stripeSection = document.getElementById("stripeSection");
+            const manualSection = document.getElementById("manualSection");
+            const stripeMinNotice = document.getElementById("stripeMinNotice");
+            const createStripePaymentBtn = document.getElementById("createStripePaymentBtn");
+
+            if (selectedPaymentMethod === "stripe_qr" && !stripeAllowed) selectedPaymentMethod = "manual_transfer";
+
+            stripeBtn.classList.toggle("active", selectedPaymentMethod === "stripe_qr");
+            manualBtn.classList.toggle("active", selectedPaymentMethod === "manual_transfer");
+
+            stripeBtn.disabled = !stripeAllowed;
+            stripeBtn.classList.toggle("opacity-50", !stripeAllowed);
+            stripeBtn.classList.toggle("cursor-not-allowed", !stripeAllowed);
+            stripeSection.style.display = selectedPaymentMethod === "stripe_qr" ? "block" : "none";
+            manualSection.style.display = selectedPaymentMethod === "manual_transfer" ? "block" : "none";
+            stripeMinNotice.classList.toggle("hidden", stripeAllowed);
+            createStripePaymentBtn.disabled = !stripeAllowed;
+            createStripePaymentBtn.classList.toggle("opacity-50", !stripeAllowed);
+            createStripePaymentBtn.classList.toggle("cursor-not-allowed", !stripeAllowed);
         }
 
         function validateSlipFile(file) {
-            if (!file) {
-                return { ok: false, message: "กรุณาแนบสลิป" };
-            }
-
+            if (!file) return { ok: false, message: "กรุณาแนบสลิป" };
             const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-            const maxSizeMB = 5;
-            const maxSizeBytes = maxSizeMB * 1024 * 1024;
-
-            if (!allowedTypes.includes(file.type)) {
-                return { ok: false, message: "รองรับเฉพาะไฟล์ JPG, PNG, WEBP" };
-            }
-
-            if (file.size > maxSizeBytes) {
-                return { ok: false, message: "ขนาดไฟล์ต้องไม่เกิน " + maxSizeMB + " MB" };
-            }
-
+            const maxSizeBytes = 5 * 1024 * 1024;
+            if (!allowedTypes.includes(file.type)) return { ok: false, message: "รองรับเฉพาะไฟล์ JPG, PNG, WEBP" };
+            if (file.size > maxSizeBytes) return { ok: false, message: "ขนาดไฟล์ต้องไม่เกิน 5 MB" };
             return { ok: true };
         }
 
-        function setSubmitButtonLoading(isLoading) {
-            const submitBtn = document.getElementById("submitBtn");
-            if (!submitBtn) return;
-
-            submitBtn.disabled = isLoading;
-            submitBtn.textContent = isLoading ? "กำลังส่งข้อมูล..." : "ยืนยันการโอนเงิน";
+        function setSubmitButtonLoading(isLoading, buttonId = "submitBtn", loadingText = "กำลังส่งข้อมูล...", normalText = "ยืนยันการโอนเงิน") {
+            const btn = document.getElementById(buttonId);
+            if (!btn) return;
+            btn.disabled = isLoading;
+            btn.textContent = isLoading ? loadingText : normalText;
         }
 
         function readFileAsBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-
                 reader.onload = function() {
                     try {
                         const result = String(reader.result || "");
                         const parts = result.split(",");
-                        if (!parts[1]) {
-                            reject(new Error("ไม่สามารถอ่านไฟล์สลิปได้"));
-                            return;
-                        }
+                        if (!parts[1]) return reject(new Error("ไม่สามารถอ่านไฟล์สลิปได้"));
                         resolve(parts[1]);
-                    } catch (err) {
-                        reject(err);
-                    }
+                    } catch (err) { reject(err); }
                 };
-
-                reader.onerror = function() {
-                    reject(new Error("เกิดข้อผิดพลาดระหว่างอ่านไฟล์"));
-                };
-
+                reader.onerror = function() { reject(new Error("เกิดข้อผิดพลาดระหว่างอ่านไฟล์")); };
                 reader.readAsDataURL(file);
             });
         }
 
-        async function submitOrder() {
-            const slipInput = document.getElementById("slipFile");
-            const slipFile = slipInput && slipInput.files ? slipInput.files[0] : null;
-            const validation = validateSlipFile(slipFile);
-
-            if (!validation.ok) {
-                alert("❌ " + validation.message);
-                return;
-            }
-
+        async function buildBasePayload() {
+            const profile = await liff.getProfile();
             const service = getSelectedService();
-            const qtyInput = (document.getElementById("quantity") || {}).value || "";
-            const qty = Number(qtyInput);
-            const link = ((document.getElementById("targetLink") || {}).value || "").trim();
+            const qty = Number(document.getElementById("quantity").value || 0);
+            const link = (document.getElementById("targetLink").value || "").trim();
+            const total = getTotalPriceNumber();
 
-            if (!service) {
-                alert("❌ ไม่พบบริการ กรุณาเลือกใหม่");
-                return;
-            }
+            return {
+                customer_name: profile.displayName || "",
+                userId: profile.userId || "",
+                platform: service.platform,
+                category: service.category || "ทั่วไป",
+                service_name: service.name,
+                service_id: service.id_24social,
+                local_service_id: service.id,
+                quantity: qty,
+                link: link,
+                unit_price: service.price,
+                total_price: total.toFixed(2),
+                payment_method: selectedPaymentMethod
+            };
+        }
 
-            if (!isPositiveInteger(qtyInput)) {
-                alert("❌ จำนวนไม่ถูกต้อง");
-                return;
-            }
+        async function createStripePayment() {
+            const validation = validateOrderFields();
+            if (!validation.ok) return alert("❌ " + validation.message);
 
-            if (qty < service.min || qty > service.max) {
-                alert("❌ จำนวนอยู่นอกช่วงที่กำหนด");
-                return;
-            }
+            const total = getTotalPriceNumber();
+            if (total < 10) return alert("❌ QR อัตโนมัติใช้ได้เมื่อยอดตั้งแต่ 10 บาทขึ้นไป");
 
-            if (!isValidHttpUrl(link)) {
-                alert("❌ ลิงก์ไม่ถูกต้อง");
-                return;
-            }
-
-            setSubmitButtonLoading(true);
-
+            setSubmitButtonLoading(true, "createStripePaymentBtn", "กำลังสร้าง QR...", "สร้าง QR เพื่อชำระเงิน");
             try {
-                const profile = await liff.getProfile();
-                const base64Slip = await readFileAsBase64(slipFile);
-
-                const payload = {
-                    customer_name: profile.displayName || "",
-                    userId: profile.userId || "",
-                    platform: service.platform,
-                    category: service.category || "ทั่วไป",
-                    service_name: service.name,
-                    service_id: service.id_24social,
-                    local_service_id: service.id,
-                    quantity: qty,
-                    link: link,
-                    unit_price: service.price,
-                    total_price: Number((qty * service.price) / 1000).toFixed(2),
-                    slip_image: base64Slip,
-                    slip_file_name: slipFile.name,
-                    slip_file_type: slipFile.type,
-                    slip_file_size: slipFile.size
-                };
+                const payload = await buildBasePayload();
+                payload.action = "create_stripe_payment";
 
                 const response = await fetch(webhookUrl, {
                     method: "POST",
@@ -515,91 +450,111 @@
                 });
 
                 const rawText = await response.text();
-
-                if (!response.ok) {
-                    throw new Error("Webhook Error (" + response.status + "): " + rawText);
-                }
+                if (!response.ok) throw new Error("Webhook Error (" + response.status + "): " + rawText);
 
                 let result;
-                try {
-                    result = JSON.parse(rawText);
-                } catch (_) {
-                    result = rawText.trim();
-                }
+                try { result = JSON.parse(rawText); }
+                catch (_) { result = rawText.trim(); }
 
-                handleWebhookResponse(result);
+                handleStripePaymentResponse(result);
             } catch (err) {
                 alert("❌ " + getErrorMessage(err));
-                setSubmitButtonLoading(false);
+                setSubmitButtonLoading(false, "createStripePaymentBtn", "กำลังสร้าง QR...", "สร้าง QR เพื่อชำระเงิน");
             }
         }
 
-        function handleWebhookResponse(result) {
+        function handleStripePaymentResponse(result) {
+            const paymentUrl = result && (result.payment_url || result.hosted_instructions_url || result.url);
+            if (!paymentUrl) {
+                alert("❌ ระบบยังไม่ได้ลิงก์ชำระเงินจาก Stripe");
+                setSubmitButtonLoading(false, "createStripePaymentBtn", "กำลังสร้าง QR...", "สร้าง QR เพื่อชำระเงิน");
+                return;
+            }
+            alert("✅ สร้าง QR สำเร็จ กำลังพาไปหน้าชำระเงิน");
+            window.location.href = paymentUrl;
+        }
+
+        async function submitManualOrder() {
+            const validation = validateOrderFields();
+            if (!validation.ok) return alert("❌ " + validation.message);
+
+            const slipInput = document.getElementById("slipFile");
+            const slipFile = slipInput && slipInput.files ? slipInput.files[0] : null;
+            const fileValidation = validateSlipFile(slipFile);
+            if (!fileValidation.ok) return alert("❌ " + fileValidation.message);
+
+            setSubmitButtonLoading(true, "submitBtn", "กำลังส่งข้อมูล...", "ยืนยันการโอนเงิน");
+            try {
+                const payload = await buildBasePayload();
+                const base64Slip = await readFileAsBase64(slipFile);
+
+                payload.action = "verify_manual_slip";
+                payload.slip_image = base64Slip;
+                payload.slip_file_name = slipFile.name;
+                payload.slip_file_type = slipFile.type;
+                payload.slip_file_size = slipFile.size;
+
+                const response = await fetch(webhookUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const rawText = await response.text();
+                if (!response.ok) throw new Error("Webhook Error (" + response.status + "): " + rawText);
+
+                let result;
+                try { result = JSON.parse(rawText); }
+                catch (_) { result = rawText.trim(); }
+
+                handleManualWebhookResponse(result);
+            } catch (err) {
+                alert("❌ " + getErrorMessage(err));
+                setSubmitButtonLoading(false, "submitBtn", "กำลังส่งข้อมูล...", "ยืนยันการโอนเงิน");
+            }
+        }
+
+        function handleManualWebhookResponse(result) {
             if (typeof result === "string") {
                 if (result === "OK") {
-                    alert("✅ ชำระเงินสำเร็จ! \nระบบกำลังทำงาน ปกติจะเสร็จภายใน 30-60 นาที\nหากยอดไม่ขึ้นภายใน 2 ชม. ทักแอดมินพร้อมแจ้งชื่อได้เลยจ้า");
-                    liff.closeWindow();
-                    return;
+                    alert("✅ ชำระเงินสำเร็จ! ระบบกำลังทำงาน");
+                    return safeCloseLiff();
                 }
-
                 alert("❌ " + result);
-                setSubmitButtonLoading(false);
+                setSubmitButtonLoading(false, "submitBtn", "กำลังส่งข้อมูล...", "ยืนยันการโอนเงิน");
                 return;
             }
 
             if (!result || typeof result !== "object") {
                 alert("❌ รูปแบบข้อมูลตอบกลับไม่ถูกต้อง");
-                setSubmitButtonLoading(false);
+                setSubmitButtonLoading(false, "submitBtn", "กำลังส่งข้อมูล...", "ยืนยันการโอนเงิน");
                 return;
             }
 
-            const success =
-                result.success === true ||
-                result.status === "success" ||
-                result.status === "SUCCESS" ||
-                result.status === "OK";
-
-            const slipValid =
-                result.easyslip_valid !== false &&
-                result.slip_valid !== false &&
-                result.valid !== false;
-
-            const amountMatch =
-                result.amount_match !== false &&
-                result.price_match !== false;
-
-            const isDuplicate =
-                result.is_duplicate === true ||
-                result.duplicated === true ||
-                result.duplicate === true;
-
-            const message =
-                result.message ||
-                result.error ||
-                result.detail ||
-                "";
+            const success = result.success === true || result.status === "success" || result.status === "SUCCESS" || result.status === "OK";
+            const slipValid = result.easyslip_valid !== false && result.slip_valid !== false && result.valid !== false;
+            const amountMatch = result.amount_match !== false && result.price_match !== false;
+            const isDuplicate = result.is_duplicate === true || result.duplicated === true || result.duplicate === true;
+            const message = result.message || result.error || result.detail || "";
 
             if (!success) {
                 alert("❌ " + (message || "ไม่สามารถทำรายการได้"));
-                setSubmitButtonLoading(false);
+                setSubmitButtonLoading(false, "submitBtn", "กำลังส่งข้อมูล...", "ยืนยันการโอนเงิน");
                 return;
             }
-
             if (!slipValid) {
                 alert("❌ สลิปไม่ผ่านการตรวจสอบ");
-                setSubmitButtonLoading(false);
+                setSubmitButtonLoading(false, "submitBtn", "กำลังส่งข้อมูล...", "ยืนยันการโอนเงิน");
                 return;
             }
-
             if (!amountMatch) {
                 alert("❌ ยอดเงินในสลิปไม่ตรงกับยอดที่ต้องชำระ");
-                setSubmitButtonLoading(false);
+                setSubmitButtonLoading(false, "submitBtn", "กำลังส่งข้อมูล...", "ยืนยันการโอนเงิน");
                 return;
             }
-
             if (isDuplicate) {
                 alert("❌ สลิปนี้ถูกใช้งานไปแล้ว");
-                setSubmitButtonLoading(false);
+                setSubmitButtonLoading(false, "submitBtn", "กำลังส่งข้อมูล...", "ยืนยันการโอนเงิน");
                 return;
             }
 
@@ -609,9 +564,7 @@
 
         function safeCloseLiff() {
             try {
-                if (typeof liff !== "undefined" && typeof liff.closeWindow === "function") {
-                    liff.closeWindow();
-                }
+                if (typeof liff !== "undefined" && typeof liff.closeWindow === "function") liff.closeWindow();
             } catch (_) {}
         }
 
