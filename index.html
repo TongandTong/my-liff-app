@@ -18,15 +18,22 @@
         <div id="orderSection">
             <div class="mb-4">
                 <label class="block text-gray-700">เลือก Platform</label>
-                <select id="platformSelect" onchange="filterServices()" class="w-full border rounded-lg p-2 mt-1 bg-gray-50">
+                <select id="platformSelect" onchange="filterCategories()" class="w-full border rounded-lg p-2 mt-1 bg-gray-50">
                     <option value="">-- กำลังโหลดข้อมูล... --</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700">เลือกหมวดหมู่</label>
+                <select id="categorySelect" onchange="filterServices()" disabled class="w-full border rounded-lg p-2 mt-1 bg-gray-50">
+                    <option value="">-- เลือก Platform ก่อน --</option>
                 </select>
             </div>
 
             <div class="mb-4">
                 <label class="block text-gray-700">เลือกบริการ</label>
                 <select id="serviceSelect" onchange="updateMinMax()" disabled class="w-full border rounded-lg p-2 mt-1 bg-gray-50">
-                    <option value="">-- เลือก Platform ก่อน --</option>
+                    <option value="">-- เลือกหมวดหมู่ก่อน --</option>
                 </select>
                 <p id="limitNote" class="text-xs text-blue-500 mt-1"></p>
             </div>
@@ -55,7 +62,10 @@
 
             <div class="bg-blue-600 text-white p-4 rounded-xl mb-4 shadow-md">
                 <p class="text-xs opacity-80">บัญชีรับเงิน (PromptPay)</p>
-                <p class="text-xl font-bold tracking-widest">750-218-3456</p> <p class="text-sm">ชื่อบัญชี: นาย นคร เมฆพะโยม</p> </div>
+                <p class="text-xl font-bold tracking-widest">750-218-3456</p>
+                <p class="text-sm">ชื่อบัญชี: นาย นคร เมฆพะโยม</p>
+            </div>
+
             <div class="bg-gray-100 p-4 rounded-lg text-center mb-4">
                 <p class="text-sm text-gray-500">ยอดที่ต้องโอน:</p>
                 <p class="text-xl font-bold text-red-500">฿ <span id="finalAmount">0.00</span></p>
@@ -72,7 +82,7 @@
 
     <script>
         const LIFF_ID = "2009857155-P69Z9Mo9";
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&gid=836222095&t=" + Date.now();
         const webhookUrl = "https://hook.eu1.make.com/uoixikfgbu10pc959jf2t8mroihi4mky";
 
         let allServices = [];
@@ -118,13 +128,14 @@
                 const dataRows = rows.slice(1);
 
                 allServices = dataRows.map(cols => ({
-                    id: String(cols[0] || "").trim(),
-                    platform: String(cols[1] || "").trim(),
-                    name: String(cols[2] || "").trim(),
-                    min: parseInt(cols[3], 10) || 0,
-                    max: parseInt(cols[4], 10) || 0,
-                    price: parseFloat(cols[5]) || 0,
-                    id_24social: String(cols[6] || "").trim()
+                    id: String(cols[0] || "").trim(),           // A = ID
+                    platform: String(cols[1] || "").trim(),     // B = Platform
+                    category: String(cols[2] || "").trim() || "ทั่วไป", // C = Category
+                    min: parseInt(cols[3], 10) || 0,            // D = Min_Qty
+                    max: parseInt(cols[4], 10) || 0,            // E = Max_Qty
+                    price: parseFloat(cols[5]) || 0,            // F = Price_Per_1
+                    id_24social: String(cols[6] || "").trim(),  // G = ID_24Social
+                    name: String(cols[7] || "").trim()          // H = Service Name
                 })).filter(s => s.id && s.platform && s.name);
 
                 const platforms = [...new Set(allServices.map(s => s.platform))];
@@ -139,6 +150,7 @@
                     appendOption(pSelect, platform, platform);
                 });
 
+                resetCategorySelect();
                 resetServiceSelect();
                 clearOrderInfo();
             } catch (error) {
@@ -196,12 +208,21 @@
             selectEl.appendChild(opt);
         }
 
+        function resetCategorySelect() {
+            const cSelect = document.getElementById("categorySelect");
+            if (!cSelect) return;
+
+            cSelect.innerHTML = "";
+            appendOption(cSelect, "", "-- เลือก Platform ก่อน --");
+            cSelect.disabled = true;
+        }
+
         function resetServiceSelect() {
             const sSelect = document.getElementById("serviceSelect");
             if (!sSelect) return;
 
             sSelect.innerHTML = "";
-            appendOption(sSelect, "", "-- เลือกบริการ --");
+            appendOption(sSelect, "", "-- เลือกหมวดหมู่ก่อน --");
             sSelect.disabled = true;
         }
 
@@ -216,8 +237,41 @@
             setMoney("finalAmount", 0);
         }
 
+        function filterCategories() {
+            const platform = (document.getElementById("platformSelect") || {}).value || "";
+            const cSelect = document.getElementById("categorySelect");
+
+            resetServiceSelect();
+            clearOrderInfo();
+
+            if (!cSelect) return;
+
+            cSelect.innerHTML = "";
+            appendOption(cSelect, "", "-- เลือกหมวดหมู่ --");
+
+            if (!platform) {
+                cSelect.innerHTML = "";
+                appendOption(cSelect, "", "-- เลือก Platform ก่อน --");
+                cSelect.disabled = true;
+                return;
+            }
+
+            const categories = [...new Set(
+                allServices
+                    .filter(service => service.platform === platform)
+                    .map(service => service.category || "ทั่วไป")
+            )];
+
+            categories.forEach(category => {
+                appendOption(cSelect, category, category);
+            });
+
+            cSelect.disabled = false;
+        }
+
         function filterServices() {
             const platform = (document.getElementById("platformSelect") || {}).value || "";
+            const category = (document.getElementById("categorySelect") || {}).value || "";
             const sSelect = document.getElementById("serviceSelect");
 
             if (!sSelect) return;
@@ -227,13 +281,13 @@
 
             clearOrderInfo();
 
-            if (!platform) {
+            if (!platform || !category) {
                 sSelect.disabled = true;
                 return;
             }
 
             allServices
-                .filter(service => service.platform === platform)
+                .filter(service => service.platform === platform && (service.category || "ทั่วไป") === category)
                 .forEach(service => appendOption(sSelect, service.id, service.name));
 
             sSelect.disabled = false;
@@ -440,6 +494,7 @@
                     customer_name: profile.displayName || "",
                     userId: profile.userId || "",
                     platform: service.platform,
+                    category: service.category || "ทั่วไป",
                     service_name: service.name,
                     service_id: service.id_24social,
                     local_service_id: service.id,
@@ -483,8 +538,7 @@
             if (typeof result === "string") {
                 if (result === "OK") {
                     alert("✅ ชำระเงินสำเร็จ! \nระบบกำลังทำงาน ปกติจะเสร็จภายใน 30-60 นาที\nหากยอดไม่ขึ้นภายใน 2 ชม. ทักแอดมินพร้อมแจ้งชื่อได้เลยจ้า");
-                    // สั่งให้หน้าจอ LIFF ปิดลงเอง เพื่อให้ลูกค้ากลับไปที่ห้องแชท
-                    liff.closeWindow(); 
+                    liff.closeWindow();
                     return;
                 }
 
