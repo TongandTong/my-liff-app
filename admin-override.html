@@ -247,9 +247,10 @@
                 serviceSelect.innerHTML = '<option value="">-- เลือกบริการ --</option>';
 
                 dataRows.forEach(cols => {
-                    const platform = String(cols[1] || "").trim();    // B
-                    const serviceName = String(cols[2] || "").trim(); // C
-                    const serviceId24 = String(cols[6] || "").trim(); // G
+                    const platform = String(cols[1] || "").trim();      // B = Platform
+                    const category = String(cols[2] || "").trim();      // C = Category
+                    const serviceId24 = String(cols[6] || "").trim();   // G = ID_24Social
+                    const serviceName = String(cols[7] || "").trim();   // H = Service Name
 
                     if (!platform || !serviceName || !serviceId24) return;
                     if (seen.has(serviceId24)) return;
@@ -258,7 +259,7 @@
 
                     const option = document.createElement("option");
                     option.value = serviceId24;
-                    option.textContent = `${platform} - ${serviceName} (${serviceId24})`;
+                    option.textContent = `${platform} - ${serviceName}${category ? ` [${category}]` : ""} (${serviceId24})`;
                     serviceSelect.appendChild(option);
                 });
 
@@ -283,29 +284,12 @@
             const operator = getTrimmedValue("operator");
             const adminNote = getTrimmedValue("adminNote");
 
-            if (!orderID || orderID.length < 4) {
-                return "กรุณากรอกรหัสออเดอร์ให้ถูกต้อง";
-            }
-
-            if (!service) {
-                return "กรุณาเลือกบริการ";
-            }
-
-            if (!isPositiveInteger(qty)) {
-                return "จำนวนต้องเป็นจำนวนเต็มที่มากกว่า 0";
-            }
-
-            if (!isValidHttpUrl(link)) {
-                return "กรุณากรอกลิงก์งานให้ถูกต้อง";
-            }
-
-            if (!operator) {
-                return "กรุณากรอกชื่อผู้ดำเนินการ";
-            }
-
-            if (!adminNote) {
-                return "กรุณากรอกเหตุผลที่ override";
-            }
+            if (!orderID || orderID.length < 4) return "กรุณากรอกรหัสออเดอร์ให้ถูกต้อง";
+            if (!service) return "กรุณาเลือกบริการ";
+            if (!isPositiveInteger(qty)) return "จำนวนต้องเป็นจำนวนเต็มที่มากกว่า 0";
+            if (!isValidHttpUrl(link)) return "กรุณากรอกลิงก์งานให้ถูกต้อง";
+            if (!operator) return "กรุณากรอกชื่อผู้ดำเนินการ";
+            if (!adminNote) return "กรุณากรอกเหตุผลที่ override";
 
             return "";
         }
@@ -404,14 +388,7 @@
 
         document.getElementById("adminForm").addEventListener("submit", submitAdminForm);
 
-        [
-            "orderID",
-            "service",
-            "qty",
-            "link",
-            "operator",
-            "adminNote"
-        ].forEach(id => {
+        ["orderID", "service", "qty", "link", "operator", "adminNote"].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener("input", clearStatus);
