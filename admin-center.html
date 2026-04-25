@@ -30,9 +30,10 @@
 
                 <div class="grid grid-cols-2 gap-3 mb-6">
                     <button id="menu-dashboard" onclick="showPage('dashboard')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">🏠 Dashboard</button>
+                    <button id="menu-services" onclick="showPage('services')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">🛒 Services</button>
                     <button id="menu-override" onclick="showPage('override')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">⚡ Override</button>
                     <button id="menu-orders" onclick="showPage('orders')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">📋 Orders</button>
-                    <button id="menu-report" onclick="showPage('report')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">📊 Report</button>
+                    <button id="menu-report" onclick="showPage('report')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all col-span-2">📊 Report</button>
                 </div>
 
                 <div id="page-dashboard" class="page-section">
@@ -57,6 +58,119 @@
                                 <p class="text-sm text-slate-400">ยอดขายรวมของวันที่เลือก:</p>
                                 <p id="totalSalesShow" class="text-2xl font-bold text-yellow-400">฿ 0.00</p>
                                 <p id="summaryNote" class="text-xs text-slate-400 mt-2"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="page-services" class="page-section hidden-section">
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
+                        <div class="flex justify-between items-center gap-3 mb-4">
+                            <h3 class="text-xl font-bold text-white">🛒 จัดการสินค้า</h3>
+                            <button onclick="loadServicesAdmin(true)" id="btnReloadServicesAdmin" class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 px-4 rounded-xl transition-all">โหลดใหม่</button>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">เลือกสินค้า</label>
+                                <select id="adminServiceSelect" onchange="selectAdminService()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white">
+                                    <option value="">-- กำลังโหลดสินค้า... --</option>
+                                </select>
+                            </div>
+
+                            <div id="serviceEditor" class="hidden">
+                                <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+                                    <div class="bg-slate-800 rounded-xl p-3 border border-slate-700">
+                                        <p class="text-slate-400 text-xs">Service ID</p>
+                                        <p id="svcIdShow" class="font-bold text-white">-</p>
+                                    </div>
+                                    <div class="bg-slate-800 rounded-xl p-3 border border-slate-700">
+                                        <p class="text-slate-400 text-xs">ID_SMM</p>
+                                        <p id="svcIdSmmShow" class="font-bold text-white">-</p>
+                                    </div>
+                                    <div class="bg-slate-800 rounded-xl p-3 border border-slate-700">
+                                        <p class="text-slate-400 text-xs">Platform</p>
+                                        <p id="svcPlatformShow" class="font-bold text-white">-</p>
+                                    </div>
+                                    <div class="bg-slate-800 rounded-xl p-3 border border-slate-700">
+                                        <p class="text-slate-400 text-xs">Category</p>
+                                        <p id="svcCategoryShow" class="font-bold text-white break-words">-</p>
+                                    </div>
+                                    <div class="bg-slate-800 rounded-xl p-3 border border-slate-700">
+                                        <p class="text-slate-400 text-xs">Min / Max</p>
+                                        <p id="svcQtyShow" class="font-bold text-white">-</p>
+                                    </div>
+                                    <div class="bg-slate-800 rounded-xl p-3 border border-slate-700">
+                                        <p class="text-slate-400 text-xs">Base Price</p>
+                                        <p id="svcBasePriceShow" class="font-bold text-cyan-400">฿ 0.00</p>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Status</label>
+                                        <select id="svcStatus" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white">
+                                            <option value="active">active</option>
+                                            <option value="inactive">inactive</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Pricing Mode</label>
+                                        <select id="svcPricingMode" onchange="toggleManualPriceField()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white">
+                                            <option value="auto">auto</option>
+                                            <option value="manual">manual</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Manual Sell Price</label>
+                                        <input type="number" id="svcManualSellPrice" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white" min="0" step="0.01" placeholder="เช่น 29.15">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Default Provider</label>
+                                        <select id="svcDefaultProvider" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white">
+                                            <option value="">-- เลือก provider --</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-2">
+                                        <p class="text-sm font-bold text-white">💡 ต้นทุน / กำไรแนะนำ</p>
+                                        <p class="text-xs text-slate-400">อิงจาก provider ที่ active และต้นทุนต่ำสุดใน Service Mapping</p>
+                                        <div class="grid grid-cols-2 gap-3 mt-3 text-sm">
+                                            <div>
+                                                <p class="text-slate-400 text-xs">Best Provider</p>
+                                                <p id="svcBestProvider" class="font-bold text-green-400">-</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-slate-400 text-xs">Provider Service ID</p>
+                                                <p id="svcBestProviderId" class="font-bold text-white">-</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-slate-400 text-xs">Cost Per 1</p>
+                                                <p id="svcBestCostPer1" class="font-bold text-red-400">฿ 0.00</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-slate-400 text-xs">Suggested Sell Price</p>
+                                                <p id="svcSuggestedSellPrice" class="font-bold text-yellow-400">฿ 0.00</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Notes</label>
+                                        <textarea id="svcNotes" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white min-h-[80px]" placeholder="บันทึกเพิ่มเติม"></textarea>
+                                    </div>
+
+                                    <button onclick="saveServiceSettings()" id="btnSaveServiceSettings" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all">
+                                        บันทึกการเปลี่ยนแปลง
+                                    </button>
+
+                                    <p class="text-xs text-slate-500">
+                                        หมายเหตุ: ปุ่มบันทึกต้องเชื่อมกับ Make webhook สำหรับอัปเดตชีท Services
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -150,11 +264,25 @@
         const SUMMARY_WEBHOOK = "https://hook.eu1.make.com/yc3vgozmud5crvt7kooewmvdi44mgf31";
         const MANUAL_OVERRIDE_WEBHOOK = "https://hook.eu1.make.com/f77e3nr7tiwft9ow2ig710ksnga4ngjt";
 
-        const SERVICES_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&gid=836222095&t=" + Date.now();
-        const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&gid=0&t=" + Date.now();
+        // ต้องเอา webhook ของ Make มาใส่ตรงนี้สำหรับอัปเดตชีท Services
+        const SERVICES_UPDATE_WEBHOOK = "PUT_YOUR_MAKE_WEBHOOK_HERE";
+
+        const SPREADSHEET_ID = "1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0";
+        const SERVICES_GID = "836222095";
+        const ORDERS_GID = "0";
+        const SERVICE_MAPPING_GID = "2039012823";
+
+        const SERVICES_CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${SERVICES_GID}&t=` + Date.now();
+        const ORDERS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${ORDERS_GID}&t=` + Date.now();
+        const SERVICE_MAPPING_CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${SERVICE_MAPPING_GID}&t=` + Date.now();
 
         let servicesLoaded = false;
         let ordersLoaded = false;
+        let servicesAdminLoaded = false;
+
+        let servicesData = [];
+        let serviceMappingsData = [];
+        let selectedServiceRecord = null;
 
         function setStatus(message = "", type = "info") {
             const status = document.getElementById("status");
@@ -170,7 +298,7 @@
 
         function formatMoney(value) {
             const num = Number(String(value).replace(/,/g, ""));
-            if (!Number.isFinite(num)) return String(value || "0.00");
+            if (!Number.isFinite(num)) return "0.00";
             return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
@@ -235,21 +363,29 @@
             document.getElementById("adminForm").reset();
             document.getElementById("ordersList").innerHTML = "";
             document.getElementById("ordersEmpty").classList.add("hidden");
+            const editor = document.getElementById("serviceEditor");
+            if (editor) editor.classList.add("hidden");
             servicesLoaded = false;
             ordersLoaded = false;
+            servicesAdminLoaded = false;
+            servicesData = [];
+            serviceMappingsData = [];
+            selectedServiceRecord = null;
             clearStatus();
             showLogin();
         }
 
         function showPage(pageName) {
-            ["dashboard", "override", "orders", "report"].forEach(name => {
+            ["dashboard", "services", "override", "orders", "report"].forEach(name => {
                 const page = document.getElementById("page-" + name);
                 const menu = document.getElementById("menu-" + name);
                 if (page) page.classList.toggle("hidden-section", name !== pageName);
                 if (menu) menu.classList.toggle("active-menu", name === pageName);
             });
+
             if (pageName === "override" && !servicesLoaded) loadServices();
             if (pageName === "orders" && !ordersLoaded) loadOrders();
+            if (pageName === "services" && !servicesAdminLoaded) loadServicesAdmin();
         }
 
         async function parseResponse(res) {
@@ -261,26 +397,31 @@
         function parseCSV(text) {
             const rows = [];
             let row = [], current = "", inQuotes = false;
+
             for (let i = 0; i < text.length; i++) {
                 const char = text[i], next = text[i + 1];
                 if (char === '"') {
                     if (inQuotes && next === '"') { current += '"'; i++; }
                     else inQuotes = !inQuotes;
                 } else if (char === "," && !inQuotes) {
-                    row.push(current); current = "";
+                    row.push(current);
+                    current = "";
                 } else if ((char === "\n" || char === "\r") && !inQuotes) {
                     if (char === "\r" && next === "\n") i++;
                     row.push(current);
                     if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
-                    row = []; current = "";
+                    row = [];
+                    current = "";
                 } else {
                     current += char;
                 }
             }
+
             if (current.length > 0 || row.length > 0) {
                 row.push(current);
                 if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
             }
+
             return rows;
         }
 
@@ -309,11 +450,16 @@
             if (!requireSession()) return;
             const btn = document.getElementById("btnCheckBalance");
             const show = document.getElementById("balanceShow");
-            btn.disabled = true; btn.textContent = "⌛ กำลังเช็ค..."; show.textContent = "฿ ..."; clearStatus();
+            btn.disabled = true;
+            btn.textContent = "⌛ กำลังเช็ค...";
+            show.textContent = "฿ ...";
+            clearStatus();
+
             try {
                 const res = await fetch(BALANCE_WEBHOOK, { method: "POST" });
                 const data = await parseResponse(res);
                 if (typeof data === "string") throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
+
                 const balance = data?.money ?? data?.balance ?? data?.amount ?? data?.credit ?? data?.wallet;
                 if (balance !== undefined && balance !== null && balance !== "") {
                     show.textContent = "฿ " + formatMoney(balance);
@@ -326,7 +472,8 @@
                 show.textContent = "เช็คยอดไม่สำเร็จ";
                 setStatus(err?.message || "เชื่อมต่อไม่ได้", "error");
             } finally {
-                btn.disabled = false; btn.textContent = "กดเช็คเงิน";
+                btn.disabled = false;
+                btn.textContent = "กดเช็คเงิน";
             }
         }
 
@@ -343,14 +490,26 @@
             const resultArea = document.getElementById("summaryResult");
             const show = document.getElementById("totalSalesShow");
             const summaryNote = document.getElementById("summaryNote");
-            if (!dateInput) { setStatus("กรุณาเลือกวันที่ก่อนดูยอดขาย", "error"); resetSummaryUI(); return; }
-            btn.disabled = true; btn.textContent = "⌛ กำลังคำนวณ..."; clearStatus();
-            resultArea.classList.remove("hidden"); show.textContent = "฿ ..."; summaryNote.textContent = "กำลังโหลดข้อมูล...";
+
+            if (!dateInput) {
+                setStatus("กรุณาเลือกวันที่ก่อนดูยอดขาย", "error");
+                resetSummaryUI();
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "⌛ กำลังคำนวณ...";
+            clearStatus();
+            resultArea.classList.remove("hidden");
+            show.textContent = "฿ ...";
+            summaryNote.textContent = "กำลังโหลดข้อมูล...";
+
             try {
                 const res = await fetch(`${SUMMARY_WEBHOOK}?date=${encodeURIComponent(dateInput)}`, { method: "GET" });
                 const data = await parseResponse(res);
                 if (typeof data === "string") throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
                 const totalSales = data?.sum_money ?? data?.total_sales ?? data?.sales ?? data?.amount ?? data?.total;
+
                 if (totalSales !== undefined && totalSales !== null && totalSales !== "") {
                     show.textContent = "฿ " + formatMoney(totalSales);
                     summaryNote.textContent = "อัปเดตจากข้อมูลของวันที่เลือกแล้ว";
@@ -365,7 +524,8 @@
                 summaryNote.textContent = "ไม่สามารถโหลดข้อมูลสรุปยอดได้";
                 setStatus(err?.message || "เชื่อมต่อ Make ไม่สำเร็จ", "error");
             } finally {
-                btn.disabled = false; btn.textContent = "ดูยอดขาย";
+                btn.disabled = false;
+                btn.textContent = "ดูยอดขาย";
             }
         }
 
@@ -383,14 +543,30 @@
             const box = document.getElementById("rangeReportBox");
             const show = document.getElementById("rangeSalesShow");
             const note = document.getElementById("rangeReportNote");
-            if (!dateFrom || !dateTo) { setStatus("กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด", "error"); resetRangeReportUI(); return; }
-            if (dateFrom > dateTo) { setStatus("วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด", "error"); resetRangeReportUI(); return; }
-            btn.disabled = true; btn.textContent = "⌛ กำลังประมวลผล..."; clearStatus();
-            box.classList.remove("hidden"); show.textContent = "฿ ..."; note.textContent = "กำลังโหลดข้อมูล...";
+
+            if (!dateFrom || !dateTo) {
+                setStatus("กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด", "error");
+                resetRangeReportUI();
+                return;
+            }
+            if (dateFrom > dateTo) {
+                setStatus("วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด", "error");
+                resetRangeReportUI();
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "⌛ กำลังประมวลผล...";
+            clearStatus();
+            box.classList.remove("hidden");
+            show.textContent = "฿ ...";
+            note.textContent = "กำลังโหลดข้อมูล...";
+
             try {
                 const res = await fetch(`${SUMMARY_WEBHOOK}?date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`, { method: "GET" });
                 const data = await parseResponse(res);
                 if (typeof data === "string") throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
+
                 const totalSales = data?.sum_money ?? data?.total_sales ?? data?.sales ?? data?.amount ?? data?.total;
                 if (totalSales !== undefined && totalSales !== null && totalSales !== "") {
                     show.textContent = "฿ " + formatMoney(totalSales);
@@ -406,38 +582,293 @@
                 note.textContent = "ไม่สามารถโหลดรายงานช่วงวันที่ได้";
                 setStatus(err?.message || "เชื่อมต่อ Make ไม่สำเร็จ", "error");
             } finally {
-                btn.disabled = false; btn.textContent = "ดูรายงานช่วงวันที่";
+                btn.disabled = false;
+                btn.textContent = "ดูรายงานช่วงวันที่";
             }
         }
 
         async function loadServices() {
             const serviceSelect = document.getElementById("service");
             if (!serviceSelect) return;
+
             try {
                 serviceSelect.innerHTML = '<option value="">-- กำลังโหลดบริการ... --</option>';
                 const response = await fetch(SERVICES_CSV_URL, { cache: "no-store" });
                 if (!response.ok) throw new Error("โหลดข้อมูลบริการไม่สำเร็จ");
+
                 const rows = parseCSV(await response.text());
                 if (!rows.length || rows.length === 1) throw new Error("ไม่พบข้อมูลบริการ");
+
                 const dataRows = rows.slice(1), seen = new Set();
                 serviceSelect.innerHTML = '<option value="">-- เลือกบริการ --</option>';
+
                 dataRows.forEach(cols => {
                     const platform = String(cols[1] || "").trim();
                     const category = String(cols[2] || "").trim();
                     const serviceId24 = String(cols[6] || "").trim();
                     const serviceName = String(cols[7] || "").trim();
+
                     if (!platform || !serviceName || !serviceId24 || seen.has(serviceId24)) return;
                     seen.add(serviceId24);
+
                     const option = document.createElement("option");
                     option.value = serviceId24;
                     option.textContent = `${platform} - ${serviceName}${category ? ` [${category}]` : ""} (${serviceId24})`;
                     serviceSelect.appendChild(option);
                 });
+
                 servicesLoaded = true;
                 if (serviceSelect.options.length <= 1) setStatus("ไม่พบบริการในชีต", "error");
             } catch (err) {
                 serviceSelect.innerHTML = '<option value="">-- โหลดบริการไม่สำเร็จ --</option>';
                 setStatus("โหลดรายการบริการไม่สำเร็จ: " + (err.message || err), "error");
+            }
+        }
+
+        async function loadServicesAdmin(forceReload = false) {
+            if (forceReload) {
+                servicesAdminLoaded = false;
+                servicesData = [];
+                serviceMappingsData = [];
+                selectedServiceRecord = null;
+                document.getElementById("serviceEditor").classList.add("hidden");
+            }
+
+            try {
+                const serviceSelect = document.getElementById("adminServiceSelect");
+                serviceSelect.innerHTML = '<option value="">-- กำลังโหลดสินค้า... --</option>';
+
+                const [servicesRes, mappingsRes] = await Promise.all([
+                    fetch(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${SERVICES_GID}&t=${Date.now()}`, { cache: "no-store" }),
+                    fetch(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${SERVICE_MAPPING_GID}&t=${Date.now()}`, { cache: "no-store" })
+                ]);
+
+                if (!servicesRes.ok) throw new Error("โหลดชีท Services ไม่สำเร็จ");
+                if (!mappingsRes.ok) throw new Error("โหลดชีท Service Mapping ไม่สำเร็จ");
+
+                const servicesRows = parseCSV(await servicesRes.text());
+                const mappingRows = parseCSV(await mappingsRes.text());
+
+                if (servicesRows.length <= 1) throw new Error("ไม่พบข้อมูลในชีท Services");
+
+                servicesData = servicesRows.slice(1).map((cols, index) => ({
+                    rowNumber: index + 2,
+                    id: String(cols[0] || "").trim(),
+                    platform: String(cols[1] || "").trim(),
+                    category: String(cols[2] || "").trim(),
+                    minQty: String(cols[3] || "").trim(),
+                    maxQty: String(cols[4] || "").trim(),
+                    pricePer1: String(cols[5] || "").trim(),
+                    idSmm: String(cols[6] || "").trim(),
+                    serviceName: String(cols[7] || "").trim(),
+                    status: String(cols[8] || "").trim().toLowerCase() || "inactive",
+                    pricingMode: String(cols[9] || "").trim().toLowerCase() || "auto",
+                    defaultProvider: String(cols[10] || "").trim(),
+                    manualSellPrice: String(cols[11] || "").trim(),
+                    notes: String(cols[12] || "").trim()
+                })).filter(item => item.id && item.serviceName);
+
+                serviceMappingsData = mappingRows.length > 1 ? mappingRows.slice(1).map(cols => ({
+                    serviceId: String(cols[1] || "").trim(),
+                    serviceName: String(cols[2] || "").trim(),
+                    supplier: String(cols[3] || "").trim(),
+                    providerServiceId: String(cols[4] || "").trim(),
+                    providerName: String(cols[5] || "").trim(),
+                    minQty: String(cols[6] || "").trim(),
+                    maxQty: String(cols[7] || "").trim(),
+                    costPer1: Number(cols[8] || 0),
+                    isDefault: String(cols[9] || "").trim().toLowerCase(),
+                    priority: Number(cols[10] || 9999),
+                    status: String(cols[11] || "").trim().toLowerCase(),
+                    pricingMode: String(cols[12] || "").trim().toLowerCase(),
+                    manualCostOverride: String(cols[13] || "").trim(),
+                    manualSellOverride: String(cols[14] || "").trim(),
+                    stripeFeePercent: Number(cols[15] || 0),
+                    makeCost: Number(cols[16] || 0),
+                    adsCost: Number(cols[17] || 0),
+                    timeCost: Number(cols[18] || 0),
+                    desiredProfit: Number(cols[19] || 0),
+                    suggestedSellPrice: Number(cols[20] || 0),
+                    notes: String(cols[21] || "").trim()
+                })) : [];
+
+                serviceSelect.innerHTML = '<option value="">-- เลือกสินค้า --</option>';
+                servicesData.forEach(service => {
+                    const option = document.createElement("option");
+                    option.value = service.id;
+                    option.textContent = `${service.platform} - ${service.serviceName} (${service.id})`;
+                    serviceSelect.appendChild(option);
+                });
+
+                servicesAdminLoaded = true;
+                setStatus("โหลดข้อมูลสินค้าและ mapping สำเร็จ", "success");
+            } catch (err) {
+                setStatus("โหลดหน้า Services ไม่สำเร็จ: " + (err.message || err), "error");
+            }
+        }
+
+        function selectAdminService() {
+            const selectedId = getTrimmedValue("adminServiceSelect");
+            const editor = document.getElementById("serviceEditor");
+            if (!selectedId) {
+                selectedServiceRecord = null;
+                editor.classList.add("hidden");
+                return;
+            }
+
+            const record = servicesData.find(item => item.id === selectedId);
+            if (!record) {
+                selectedServiceRecord = null;
+                editor.classList.add("hidden");
+                return;
+            }
+
+            selectedServiceRecord = record;
+
+            document.getElementById("svcIdShow").textContent = record.id || "-";
+            document.getElementById("svcIdSmmShow").textContent = record.idSmm || "-";
+            document.getElementById("svcPlatformShow").textContent = record.platform || "-";
+            document.getElementById("svcCategoryShow").textContent = record.category || "-";
+            document.getElementById("svcQtyShow").textContent = `${record.minQty || "-"} / ${record.maxQty || "-"}`;
+            document.getElementById("svcBasePriceShow").textContent = "฿ " + formatMoney(record.pricePer1 || 0);
+
+            document.getElementById("svcStatus").value = record.status || "inactive";
+            document.getElementById("svcPricingMode").value = record.pricingMode || "auto";
+            document.getElementById("svcManualSellPrice").value = record.manualSellPrice || "";
+            document.getElementById("svcNotes").value = record.notes || "";
+
+            populateProviderDropdown(record.id, record.defaultProvider);
+            renderServiceMappingSummary(record.id);
+
+            editor.classList.remove("hidden");
+            toggleManualPriceField();
+        }
+
+        function populateProviderDropdown(serviceId, selectedValue = "") {
+            const select = document.getElementById("svcDefaultProvider");
+            const providers = [...new Set(
+                serviceMappingsData
+                    .filter(item => item.serviceId === serviceId && item.status === "active" && item.supplier)
+                    .map(item => item.supplier)
+            )];
+
+            select.innerHTML = '<option value="">-- เลือก provider --</option>';
+            providers.forEach(provider => {
+                const option = document.createElement("option");
+                option.value = provider;
+                option.textContent = provider;
+                select.appendChild(option);
+            });
+
+            select.value = selectedValue || "";
+        }
+
+        function renderServiceMappingSummary(serviceId) {
+            const rows = serviceMappingsData
+                .filter(item => item.serviceId === serviceId && item.status === "active" && Number.isFinite(item.costPer1))
+                .sort((a, b) => {
+                    if (a.costPer1 !== b.costPer1) return a.costPer1 - b.costPer1;
+                    return (a.priority || 9999) - (b.priority || 9999);
+                });
+
+            const best = rows[0];
+
+            document.getElementById("svcBestProvider").textContent = best?.supplier || "-";
+            document.getElementById("svcBestProviderId").textContent = best?.providerServiceId || "-";
+            document.getElementById("svcBestCostPer1").textContent = best ? "฿ " + formatMoney(best.costPer1) : "฿ 0.00";
+            document.getElementById("svcSuggestedSellPrice").textContent = best ? "฿ " + formatMoney(best.suggestedSellPrice || 0) : "฿ 0.00";
+        }
+
+        function toggleManualPriceField() {
+            const mode = getTrimmedValue("svcPricingMode").toLowerCase();
+            const manualInput = document.getElementById("svcManualSellPrice");
+            manualInput.disabled = mode !== "manual";
+            manualInput.classList.toggle("opacity-60", mode !== "manual");
+        }
+
+        async function saveServiceSettings() {
+            if (!requireSession()) return;
+            if (!selectedServiceRecord) return setStatus("กรุณาเลือกสินค้าก่อน", "error");
+
+            if (!SERVICES_UPDATE_WEBHOOK || SERVICES_UPDATE_WEBHOOK === "PUT_YOUR_MAKE_WEBHOOK_HERE") {
+                return setStatus("ยังไม่ได้ใส่ SERVICES_UPDATE_WEBHOOK", "error");
+            }
+
+            const btn = document.getElementById("btnSaveServiceSettings");
+            const status = getTrimmedValue("svcStatus").toLowerCase();
+            const pricingMode = getTrimmedValue("svcPricingMode").toLowerCase();
+            const defaultProvider = getTrimmedValue("svcDefaultProvider");
+            const manualSellPrice = getTrimmedValue("svcManualSellPrice");
+            const notes = getTrimmedValue("svcNotes");
+
+            if (!["active", "inactive"].includes(status)) {
+                return setStatus("Status ต้องเป็น active หรือ inactive", "error");
+            }
+            if (!["auto", "manual"].includes(pricingMode)) {
+                return setStatus("Pricing Mode ต้องเป็น auto หรือ manual", "error");
+            }
+            if (pricingMode === "manual" && manualSellPrice !== "" && Number(manualSellPrice) < 0) {
+                return setStatus("Manual Sell Price ต้องไม่ติดลบ", "error");
+            }
+
+            btn.disabled = true;
+            btn.textContent = "กำลังบันทึก...";
+
+            try {
+                const payload = {
+                    admin_secret: THE_KEY,
+                    action: "update_service_settings",
+                    spreadsheet_id: SPREADSHEET_ID,
+                    sheet_name: "Services",
+                    row_number: selectedServiceRecord.rowNumber,
+                    service_id: selectedServiceRecord.id,
+                    service_name: selectedServiceRecord.serviceName,
+                    status: status,
+                    pricing_mode: pricingMode,
+                    default_provider: defaultProvider,
+                    manual_sell_price: manualSellPrice,
+                    notes: notes,
+                    requested_at: new Date().toISOString()
+                };
+
+                const res = await fetch(SERVICES_UPDATE_WEBHOOK, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await parseResponse(res);
+
+                if (typeof data === "string") {
+                    if (data === "OK" || data.toLowerCase() === "success") {
+                        setStatus("บันทึกการตั้งค่าสินค้าเรียบร้อย", "success");
+                        await loadServicesAdmin(true);
+                        document.getElementById("adminServiceSelect").value = selectedServiceRecord.id;
+                        selectAdminService();
+                        return;
+                    }
+                    throw new Error(data || "ระบบตอบกลับไม่ถูกต้อง");
+                }
+
+                const success =
+                    data?.success === true ||
+                    data?.status === "success" ||
+                    data?.status === "SUCCESS" ||
+                    data?.status === "OK";
+
+                const message = data?.message || data?.detail || data?.error || "";
+
+                if (!success) throw new Error(message || "บันทึกไม่สำเร็จ");
+
+                setStatus(message || "บันทึกการตั้งค่าสินค้าเรียบร้อย", "success");
+                await loadServicesAdmin(true);
+                document.getElementById("adminServiceSelect").value = selectedServiceRecord.id;
+                selectAdminService();
+            } catch (err) {
+                setStatus(err?.message || "บันทึกการตั้งค่าไม่สำเร็จ", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "บันทึกการเปลี่ยนแปลง";
             }
         }
 
@@ -448,22 +879,29 @@
             const link = getTrimmedValue("link");
             const operator = getTrimmedValue("operator");
             const adminNote = getTrimmedValue("adminNote");
+
             if (!orderID || orderID.length < 4) return "กรุณากรอกรหัสออเดอร์ให้ถูกต้อง";
             if (!service) return "กรุณาเลือกบริการ";
             if (!isPositiveInteger(qty)) return "จำนวนต้องเป็นจำนวนเต็มที่มากกว่า 0";
             if (!isValidHttpUrl(link)) return "กรุณากรอกลิงก์งานให้ถูกต้อง";
             if (!operator) return "กรุณากรอกชื่อผู้ดำเนินการ";
             if (!adminNote) return "กรุณากรอกเหตุผลที่ override";
+
             return "";
         }
 
         async function submitOverrideForm(e) {
             e.preventDefault();
             if (!requireSession()) return;
+
             const validationError = validateOverrideForm();
             if (validationError) return setStatus(validationError, "error");
+
             const btn = document.getElementById("submitBtn");
-            btn.disabled = true; btn.textContent = "⌛ กำลังส่งข้อมูล..."; clearStatus();
+            btn.disabled = true;
+            btn.textContent = "⌛ กำลังส่งข้อมูล...";
+            clearStatus();
+
             const payload = {
                 admin_secret: THE_KEY,
                 orderID: getTrimmedValue("orderID"),
@@ -475,13 +913,16 @@
                 method: "admin_manual",
                 requested_at: new Date().toISOString()
             };
+
             try {
                 const res = await fetch(MANUAL_OVERRIDE_WEBHOOK, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
                 });
+
                 const data = await parseResponse(res);
+
                 if (typeof data === "string") {
                     const lower = data.toLowerCase();
                     if (data === "OK" || lower === "success") {
@@ -491,8 +932,10 @@
                     }
                     throw new Error(data || "ระบบตอบกลับไม่ถูกต้อง");
                 }
+
                 const success = data?.success === true || data?.status === "success" || data?.status === "SUCCESS" || data?.status === "OK";
                 const message = data?.message || data?.detail || data?.error || "";
+
                 if (success) {
                     setStatus(message || "ส่งคำสั่งแมนนวลเรียบร้อย", "success");
                     document.getElementById("adminForm").reset();
@@ -502,16 +945,19 @@
             } catch (err) {
                 setStatus(err?.message || "ส่งคำสั่งไม่สำเร็จ", "error");
             } finally {
-                btn.disabled = false; btn.textContent = "ยืนยันการสั่งงาน";
+                btn.disabled = false;
+                btn.textContent = "ยืนยันการสั่งงาน";
             }
         }
 
         async function loadOrders() {
             if (!requireSession()) return;
+
             const loading = document.getElementById("ordersLoading");
             const empty = document.getElementById("ordersEmpty");
             const list = document.getElementById("ordersList");
             const btn = document.getElementById("btnReloadOrders");
+
             btn.disabled = true;
             loading.classList.remove("hidden");
             empty.classList.add("hidden");
@@ -521,12 +967,14 @@
             try {
                 const response = await fetch(ORDERS_CSV_URL, { cache: "no-store" });
                 if (!response.ok) throw new Error("โหลดข้อมูลออเดอร์ไม่สำเร็จ");
+
                 const rows = parseCSV(await response.text());
                 if (!rows.length || rows.length <= 1) {
                     empty.classList.remove("hidden");
                     ordersLoaded = true;
                     return;
                 }
+
                 const dataRows = rows.slice(1).reverse().slice(0, 20);
                 if (dataRows.length === 0) {
                     empty.classList.remove("hidden");
@@ -656,11 +1104,15 @@
         }
 
         document.getElementById("adminForm").addEventListener("submit", submitOverrideForm);
+
         document.getElementById("passInput").addEventListener("keydown", function(e) {
-            if (e.key === "Enter") { e.preventDefault(); login(); }
+            if (e.key === "Enter") {
+                e.preventDefault();
+                login();
+            }
         });
 
-        ["passInput","summaryDate","reportDateFrom","reportDateTo","orderID","service","qty","link","operator","adminNote"].forEach(id => {
+        ["passInput","summaryDate","reportDateFrom","reportDateTo","orderID","service","qty","link","operator","adminNote","adminServiceSelect","svcStatus","svcPricingMode","svcManualSellPrice","svcDefaultProvider","svcNotes"].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener("input", clearStatus);
