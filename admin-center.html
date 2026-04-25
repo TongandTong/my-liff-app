@@ -787,91 +787,92 @@
         }
 
         async function saveServiceSettings() {
-            if (!requireSession()) return;
-            if (!selectedServiceRecord) return setStatus("กรุณาเลือกสินค้าก่อน", "error");
+    if (!requireSession()) return;
+    if (!selectedServiceRecord) return setStatus("กรุณาเลือกสินค้าก่อน", "error");
 
-            if (!SERVICES_UPDATE_WEBHOOK || SERVICES_UPDATE_WEBHOOK === "PUT_YOUR_MAKE_WEBHOOK_HERE") {
-                return setStatus("ยังไม่ได้ใส่ SERVICES_UPDATE_WEBHOOK", "error");
-            }
+    if (!SERVICES_UPDATE_WEBHOOK || SERVICES_UPDATE_WEBHOOK === "PUT_YOUR_MAKE_WEBHOOK_HERE") {
+        return setStatus("ยังไม่ได้ใส่ SERVICES_UPDATE_WEBHOOK", "error");
+    }
 
-            const btn = document.getElementById("btnSaveServiceSettings");
-            const status = getTrimmedValue("svcStatus").toLowerCase();
-            const pricingMode = getTrimmedValue("svcPricingMode").toLowerCase();
-            const defaultProvider = getTrimmedValue("svcDefaultProvider");
-            const manualSellPrice = getTrimmedValue("svcManualSellPrice");
-            const notes = getTrimmedValue("svcNotes");
+    const btn = document.getElementById("btnSaveServiceSettings");
+    const currentServiceId = selectedServiceRecord.id;
 
-            if (!["active", "inactive"].includes(status)) {
-                return setStatus("Status ต้องเป็น active หรือ inactive", "error");
-            }
-            if (!["auto", "manual"].includes(pricingMode)) {
-                return setStatus("Pricing Mode ต้องเป็น auto หรือ manual", "error");
-            }
-            if (pricingMode === "manual" && manualSellPrice !== "" && Number(manualSellPrice) < 0) {
-                return setStatus("Manual Sell Price ต้องไม่ติดลบ", "error");
-            }
+    const status = getTrimmedValue("svcStatus").toLowerCase();
+    const pricingMode = getTrimmedValue("svcPricingMode").toLowerCase();
+    const defaultProvider = getTrimmedValue("svcDefaultProvider");
+    const manualSellPrice = getTrimmedValue("svcManualSellPrice");
+    const notes = getTrimmedValue("svcNotes");
 
-            btn.disabled = true;
-            btn.textContent = "กำลังบันทึก...";
+    if (!["active", "inactive"].includes(status)) {
+        return setStatus("Status ต้องเป็น active หรือ inactive", "error");
+    }
+    if (!["auto", "manual"].includes(pricingMode)) {
+        return setStatus("Pricing Mode ต้องเป็น auto หรือ manual", "error");
+    }
+    if (pricingMode === "manual" && manualSellPrice !== "" && Number(manualSellPrice) < 0) {
+        return setStatus("Manual Sell Price ต้องไม่ติดลบ", "error");
+    }
 
-            try {
-                const payload = {
-                    admin_secret: THE_KEY,
-                    action: "update_service_settings",
-                    spreadsheet_id: SPREADSHEET_ID,
-                    sheet_name: "Services",
-                    row_number: selectedServiceRecord.rowNumber,
-                    service_id: selectedServiceRecord.id,
-                    service_name: selectedServiceRecord.serviceName,
-                    status: status,
-                    pricing_mode: pricingMode,
-                    default_provider: defaultProvider,
-                    manual_sell_price: manualSellPrice,
-                    notes: notes,
-                    requested_at: new Date().toISOString()
-                };
+    btn.disabled = true;
+    btn.textContent = "กำลังบันทึก...";
 
-                const res = await fetch(SERVICES_UPDATE_WEBHOOK, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
+    try {
+        const payload = {
+            admin_secret: THE_KEY,
+            action: "update_service_settings",
+            spreadsheet_id: SPREADSHEET_ID,
+            sheet_name: "Services",
+            row_number: selectedServiceRecord.rowNumber,
+            service_id: selectedServiceRecord.id,
+            service_name: selectedServiceRecord.serviceName,
+            status: status,
+            pricing_mode: pricingMode,
+            default_provider: defaultProvider,
+            manual_sell_price: manualSellPrice,
+            notes: notes,
+            requested_at: new Date().toISOString()
+        };
 
-                const data = await parseResponse(res);
+        const res = await fetch(SERVICES_UPDATE_WEBHOOK, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
 
-                if (typeof data === "string") {
-                    if (data === "OK" || data.toLowerCase() === "success") {
-                        setStatus("บันทึกการตั้งค่าสินค้าเรียบร้อย", "success");
-                        await loadServicesAdmin(true);
-                        document.getElementById("adminServiceSelect").value = selectedServiceRecord.id;
-                        selectAdminService();
-                        return;
-                    }
-                    throw new Error(data || "ระบบตอบกลับไม่ถูกต้อง");
-                }
+        const data = await parseResponse(res);
 
-                const success =
-                    data?.success === true ||
-                    data?.status === "success" ||
-                    data?.status === "SUCCESS" ||
-                    data?.status === "OK";
-
-                const message = data?.message || data?.detail || data?.error || "";
-
-                if (!success) throw new Error(message || "บันทึกไม่สำเร็จ");
-
-                setStatus(message || "บันทึกการตั้งค่าสินค้าเรียบร้อย", "success");
+        if (typeof data === "string") {
+            if (data === "OK" || data.toLowerCase() === "success") {
                 await loadServicesAdmin(true);
-                document.getElementById("adminServiceSelect").value = selectedServiceRecord.id;
+                document.getElementById("adminServiceSelect").value = currentServiceId;
                 selectAdminService();
-            } catch (err) {
-                setStatus(err?.message || "บันทึกการตั้งค่าไม่สำเร็จ", "error");
-            } finally {
-                btn.disabled = false;
-                btn.textContent = "บันทึกการเปลี่ยนแปลง";
+                setStatus("บันทึกการตั้งค่าสินค้าเรียบร้อย", "success");
+                return;
             }
+            throw new Error(data || "ระบบตอบกลับไม่ถูกต้อง");
         }
 
+        const success =
+            data?.success === true ||
+            data?.status === "success" ||
+            data?.status === "SUCCESS" ||
+            data?.status === "OK";
+
+        const message = data?.message || data?.detail || data?.error || "";
+
+        if (!success) throw new Error(message || "บันทึกไม่สำเร็จ");
+
+        await loadServicesAdmin(true);
+        document.getElementById("adminServiceSelect").value = currentServiceId;
+        selectAdminService();
+        setStatus(message || "บันทึกการตั้งค่าสินค้าเรียบร้อย", "success");
+    } catch (err) {
+        setStatus(err?.message || "บันทึกการตั้งค่าไม่สำเร็จ", "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "บันทึกการเปลี่ยนแปลง";
+    }
+}
         function validateOverrideForm() {
             const orderID = getTrimmedValue("orderID");
             const service = getTrimmedValue("service");
