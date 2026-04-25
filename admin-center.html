@@ -14,27 +14,13 @@
 </head>
 <body class="p-4">
     <div class="max-w-md mx-auto">
-        <!-- LOGIN -->
         <div id="loginSection" class="mt-20 bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
             <h1 class="text-2xl font-bold text-center text-yellow-400 mb-6">🔒 Admin Login</h1>
-            <input
-                type="password"
-                id="passInput"
-                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-center mb-4"
-                placeholder="กรอกรหัสผ่าน"
-                autocomplete="current-password"
-            >
-            <button
-                id="loginBtn"
-                onclick="login()"
-                class="w-full bg-yellow-500 text-slate-900 font-bold py-4 rounded-2xl hover:bg-yellow-400 transition-all"
-            >
-                เข้าสู่ระบบ
-            </button>
+            <input type="password" id="passInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-center mb-4" placeholder="กรอกรหัสผ่าน" autocomplete="current-password">
+            <button id="loginBtn" onclick="login()" class="w-full bg-yellow-500 text-slate-900 font-bold py-4 rounded-2xl hover:bg-yellow-400 transition-all">เข้าสู่ระบบ</button>
             <p id="status" class="mt-4 text-center text-sm font-bold"></p>
         </div>
 
-        <!-- APP -->
         <div id="appSection" style="display:none;" class="mt-8">
             <div class="bg-slate-800 p-5 rounded-3xl border border-slate-700 shadow-2xl">
                 <div class="mb-5">
@@ -42,35 +28,19 @@
                     <p class="text-center text-slate-400 text-sm">จัดการระบบ SocialBoost</p>
                 </div>
 
-                <!-- MENU -->
                 <div class="grid grid-cols-2 gap-3 mb-6">
-                    <button id="menu-dashboard" onclick="showPage('dashboard')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">
-                        🏠 Dashboard
-                    </button>
-                    <button id="menu-override" onclick="showPage('override')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">
-                        ⚡ Override
-                    </button>
-                    <button id="menu-orders" onclick="showPage('orders')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">
-                        📋 Orders
-                    </button>
-                    <button id="menu-report" onclick="showPage('report')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">
-                        📊 Report
-                    </button>
+                    <button id="menu-dashboard" onclick="showPage('dashboard')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">🏠 Dashboard</button>
+                    <button id="menu-override" onclick="showPage('override')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">⚡ Override</button>
+                    <button id="menu-orders" onclick="showPage('orders')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">📋 Orders</button>
+                    <button id="menu-report" onclick="showPage('report')" class="menu-btn bg-slate-900 border border-slate-700 rounded-2xl p-3 text-sm font-bold hover:border-yellow-500 transition-all">📊 Report</button>
                 </div>
 
-                <!-- PAGE: DASHBOARD -->
                 <div id="page-dashboard" class="page-section">
                     <div class="space-y-4">
                         <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
                             <div class="flex justify-between items-center mb-2 gap-3">
                                 <h3 class="text-xl font-bold text-white">💰 API Balance</h3>
-                                <button
-                                    onclick="checkBalance()"
-                                    id="btnCheckBalance"
-                                    class="bg-blue-600 hover:bg-blue-500 text-white text-xs py-2 px-4 rounded-xl transition-all"
-                                >
-                                    กดเช็คเงิน
-                                </button>
+                                <button onclick="checkBalance()" id="btnCheckBalance" class="bg-blue-600 hover:bg-blue-500 text-white text-xs py-2 px-4 rounded-xl transition-all">กดเช็คเงิน</button>
                             </div>
                             <p id="balanceShow" class="text-2xl font-bold text-green-400 mt-2">฿ --.--</p>
                             <p class="text-xs text-slate-400 mt-1">ยอดเงินคงเหลือใน 24Social</p>
@@ -79,18 +49,8 @@
                         <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
                             <h3 class="text-xl font-bold text-white mb-3">📊 Sales Summary</h3>
                             <div class="flex flex-col gap-3">
-                                <input
-                                    type="date"
-                                    id="summaryDate"
-                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white"
-                                >
-                                <button
-                                    onclick="getSummary()"
-                                    id="btnSummary"
-                                    class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl transition-all"
-                                >
-                                    ดูยอดขาย
-                                </button>
+                                <input type="date" id="summaryDate" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
+                                <button onclick="getSummary()" id="btnSummary" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl transition-all">ดูยอดขาย</button>
                             </div>
 
                             <div id="summaryResult" class="hidden mt-4 pt-4 border-t border-slate-700">
@@ -102,7 +62,6 @@
                     </div>
                 </div>
 
-                <!-- PAGE: OVERRIDE -->
                 <div id="page-override" class="page-section hidden-section">
                     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
                         <h3 class="text-xl font-bold text-white mb-2">⚡ Manual Override</h3>
@@ -111,13 +70,7 @@
                         <form id="adminForm" class="space-y-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-400 uppercase mb-1">รหัสออเดอร์ (Order ID)</label>
-                                <input
-                                    type="text"
-                                    id="orderID"
-                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white"
-                                    placeholder="เช่น ORD2024XXXX"
-                                    maxlength="100"
-                                >
+                                <input type="text" id="orderID" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white" placeholder="เช่น ORD2024XXXX" maxlength="100">
                             </div>
 
                             <div>
@@ -129,79 +82,41 @@
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-400 uppercase mb-1">จำนวน</label>
-                                <input
-                                    type="number"
-                                    id="qty"
-                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white"
-                                    placeholder="จำนวน"
-                                    min="1"
-                                    step="1"
-                                >
+                                <input type="number" id="qty" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white" placeholder="จำนวน" min="1" step="1">
                             </div>
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-400 uppercase mb-1">ลิงก์งาน</label>
-                                <input
-                                    type="url"
-                                    id="link"
-                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white"
-                                    placeholder="https://..."
-                                >
+                                <input type="url" id="link" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white" placeholder="https://...">
                             </div>
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-400 uppercase mb-1">ผู้ดำเนินการ</label>
-                                <input
-                                    type="text"
-                                    id="operator"
-                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white"
-                                    placeholder="เช่น admin_nakorn"
-                                    maxlength="50"
-                                >
+                                <input type="text" id="operator" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white" placeholder="เช่น admin_nakorn" maxlength="50">
                             </div>
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-400 uppercase mb-1">เหตุผลที่ Override</label>
-                                <textarea
-                                    id="adminNote"
-                                    class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white min-h-[80px]"
-                                    placeholder="อธิบายสาเหตุที่ต้องสั่งงานแมนนวล"
-                                    maxlength="500"
-                                ></textarea>
+                                <textarea id="adminNote" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white min-h-[80px]" placeholder="อธิบายสาเหตุที่ต้องสั่งงานแมนนวล" maxlength="500"></textarea>
                             </div>
 
-                            <button
-                                type="submit"
-                                id="submitBtn"
-                                class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all"
-                            >
-                                ยืนยันการสั่งงาน
-                            </button>
+                            <button type="submit" id="submitBtn" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-2xl transition-all">ยืนยันการสั่งงาน</button>
                         </form>
                     </div>
                 </div>
 
-                <!-- PAGE: ORDERS -->
                 <div id="page-orders" class="page-section hidden-section">
                     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
                         <div class="flex justify-between items-center mb-4 gap-3">
                             <h3 class="text-xl font-bold text-white">📋 ประวัติออเดอร์</h3>
-                            <button
-                                onclick="loadOrders()"
-                                id="btnReloadOrders"
-                                class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 px-4 rounded-xl transition-all"
-                            >
-                                โหลดใหม่
-                            </button>
+                            <button onclick="loadOrders()" id="btnReloadOrders" class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 px-4 rounded-xl transition-all">โหลดใหม่</button>
                         </div>
-
                         <div id="ordersLoading" class="hidden text-sm text-slate-400 mb-3">กำลังโหลดข้อมูล...</div>
                         <div id="ordersEmpty" class="hidden text-sm text-slate-400 mb-3">ยังไม่พบข้อมูลออเดอร์</div>
                         <div id="ordersList" class="space-y-3"></div>
                     </div>
                 </div>
 
-                <!-- PAGE: REPORT -->
                 <div id="page-report" class="page-section hidden-section">
                     <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700">
                         <h3 class="text-xl font-bold text-white mb-3">📈 รายงานรายวัน</h3>
@@ -212,13 +127,7 @@
                             <input type="date" id="reportDateTo" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-white">
                         </div>
 
-                        <button
-                            onclick="getRangeReport()"
-                            id="btnRangeReport"
-                            class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all"
-                        >
-                            ดูรายงานช่วงวันที่
-                        </button>
+                        <button onclick="getRangeReport()" id="btnRangeReport" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all">ดูรายงานช่วงวันที่</button>
 
                         <div id="rangeReportBox" class="hidden mt-4 pt-4 border-t border-slate-700">
                             <p class="text-sm text-slate-400">ยอดรวมช่วงวันที่เลือก:</p>
@@ -250,31 +159,19 @@
         function setStatus(message = "", type = "info") {
             const status = document.getElementById("status");
             if (!status) return;
-
             status.className = "mt-4 text-center text-sm font-bold";
-
-            if (type === "success") {
-                status.classList.add("text-green-400");
-            } else if (type === "error") {
-                status.classList.add("text-red-400");
-            } else {
-                status.classList.add("text-slate-300");
-            }
-
+            if (type === "success") status.classList.add("text-green-400");
+            else if (type === "error") status.classList.add("text-red-400");
+            else status.classList.add("text-slate-300");
             status.textContent = message;
         }
 
-        function clearStatus() {
-            setStatus("", "info");
-        }
+        function clearStatus() { setStatus("", "info"); }
 
         function formatMoney(value) {
-            const num = Number(value);
-            if (!Number.isFinite(num)) return String(value);
-            return num.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+            const num = Number(String(value).replace(/,/g, ""));
+            if (!Number.isFinite(num)) return String(value || "0.00");
+            return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function getTrimmedValue(id) {
@@ -282,17 +179,13 @@
             return el ? String(el.value || "").trim() : "";
         }
 
-        function isPositiveInteger(value) {
-            return /^[1-9]\d*$/.test(String(value).trim());
-        }
+        function isPositiveInteger(value) { return /^[1-9]\d*$/.test(String(value).trim()); }
 
         function isValidHttpUrl(url) {
             try {
                 const parsed = new URL(url);
                 return parsed.protocol === "http:" || parsed.protocol === "https:";
-            } catch (_) {
-                return false;
-            }
+            } catch (_) { return false; }
         }
 
         function showLogin() {
@@ -303,11 +196,9 @@
         function showApp() {
             document.getElementById("loginSection").style.display = "none";
             document.getElementById("appSection").style.display = "block";
-
             const summaryDate = document.getElementById("summaryDate");
             const reportDateFrom = document.getElementById("reportDateFrom");
             const reportDateTo = document.getElementById("reportDateTo");
-
             if (summaryDate && !summaryDate.value) summaryDate.valueAsDate = new Date();
             if (reportDateFrom && !reportDateFrom.value) reportDateFrom.valueAsDate = new Date();
             if (reportDateTo && !reportDateTo.value) reportDateTo.valueAsDate = new Date();
@@ -324,12 +215,7 @@
 
         function login() {
             const pass = (document.getElementById("passInput").value || "").trim();
-
-            if (!pass) {
-                setStatus("กรุณากรอกรหัสผ่าน", "error");
-                return;
-            }
-
+            if (!pass) return setStatus("กรุณากรอกรหัสผ่าน", "error");
             if (pass === THE_KEY) {
                 sessionStorage.setItem(SESSION_KEY, "1");
                 clearStatus();
@@ -346,126 +232,89 @@
             document.getElementById("balanceShow").textContent = "฿ --.--";
             resetSummaryUI();
             resetRangeReportUI();
-
             document.getElementById("adminForm").reset();
             document.getElementById("ordersList").innerHTML = "";
             document.getElementById("ordersEmpty").classList.add("hidden");
             servicesLoaded = false;
             ordersLoaded = false;
-
             clearStatus();
             showLogin();
         }
 
         function showPage(pageName) {
-            const pages = ["dashboard", "override", "orders", "report"];
-            pages.forEach(name => {
+            ["dashboard", "override", "orders", "report"].forEach(name => {
                 const page = document.getElementById("page-" + name);
                 const menu = document.getElementById("menu-" + name);
-
-                if (page) {
-                    page.classList.toggle("hidden-section", name !== pageName);
-                }
-
-                if (menu) {
-                    menu.classList.toggle("active-menu", name === pageName);
-                }
+                if (page) page.classList.toggle("hidden-section", name !== pageName);
+                if (menu) menu.classList.toggle("active-menu", name === pageName);
             });
-
-            if (pageName === "override" && !servicesLoaded) {
-                loadServices();
-            }
-
-            if (pageName === "orders" && !ordersLoaded) {
-                loadOrders();
-            }
+            if (pageName === "override" && !servicesLoaded) loadServices();
+            if (pageName === "orders" && !ordersLoaded) loadOrders();
         }
 
         async function parseResponse(res) {
             const rawText = await res.text();
-
-            if (!res.ok) {
-                throw new Error("Webhook Error (" + res.status + ")");
-            }
-
-            try {
-                return JSON.parse(rawText);
-            } catch (_) {
-                return rawText.trim();
-            }
+            if (!res.ok) throw new Error("Webhook Error (" + res.status + ")");
+            try { return JSON.parse(rawText); } catch (_) { return rawText.trim(); }
         }
 
         function parseCSV(text) {
             const rows = [];
-            let row = [];
-            let current = "";
-            let inQuotes = false;
-
+            let row = [], current = "", inQuotes = false;
             for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                const next = text[i + 1];
-
+                const char = text[i], next = text[i + 1];
                 if (char === '"') {
-                    if (inQuotes && next === '"') {
-                        current += '"';
-                        i++;
-                    } else {
-                        inQuotes = !inQuotes;
-                    }
+                    if (inQuotes && next === '"') { current += '"'; i++; }
+                    else inQuotes = !inQuotes;
                 } else if (char === "," && !inQuotes) {
-                    row.push(current);
-                    current = "";
+                    row.push(current); current = "";
                 } else if ((char === "\n" || char === "\r") && !inQuotes) {
                     if (char === "\r" && next === "\n") i++;
                     row.push(current);
-
-                    if (row.some(cell => String(cell).trim() !== "")) {
-                        rows.push(row);
-                    }
-
-                    row = [];
-                    current = "";
+                    if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
+                    row = []; current = "";
                 } else {
                     current += char;
                 }
             }
-
             if (current.length > 0 || row.length > 0) {
                 row.push(current);
-                if (row.some(cell => String(cell).trim() !== "")) {
-                    rows.push(row);
-                }
+                if (row.some(cell => String(cell).trim() !== "")) rows.push(row);
             }
-
             return rows;
+        }
+
+        function createBadge(text, bgClass = "bg-slate-700", textClass = "text-white") {
+            return `<span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${bgClass} ${textClass}">${text || "-"}</span>`;
+        }
+
+        function getPaymentBadge(method, gateway) {
+            const key = `${method}|${gateway}`.toLowerCase();
+            if (key.includes("stripe_qr") || key.includes("stripe")) return createBadge("Stripe QR", "bg-indigo-600", "text-white");
+            if (key.includes("manual_transfer") || key.includes("easyslip")) return createBadge("โอนเอง + สลิป", "bg-emerald-600", "text-white");
+            return createBadge(method || gateway || "-", "bg-slate-700", "text-white");
+        }
+
+        function getOrderStatusBadge(status) {
+            const value = String(status || "").trim().toLowerCase();
+            if (value === "completed") return createBadge("Completed", "bg-green-600");
+            if (value === "paid") return createBadge("Paid", "bg-cyan-600");
+            if (value === "waiting payment") return createBadge("Waiting Payment", "bg-amber-500", "text-slate-900");
+            if (value === "in progress") return createBadge("In Progress", "bg-blue-600");
+            if (value === "failed" || value === "payment failed" || value === "rejected") return createBadge(status || "Failed", "bg-red-600");
+            return createBadge(status || "-", "bg-slate-700");
         }
 
         async function checkBalance() {
             if (!requireSession()) return;
-
             const btn = document.getElementById("btnCheckBalance");
             const show = document.getElementById("balanceShow");
-
-            btn.disabled = true;
-            btn.textContent = "⌛ กำลังเช็ค...";
-            show.textContent = "฿ ...";
-            clearStatus();
-
+            btn.disabled = true; btn.textContent = "⌛ กำลังเช็ค..."; show.textContent = "฿ ..."; clearStatus();
             try {
                 const res = await fetch(BALANCE_WEBHOOK, { method: "POST" });
                 const data = await parseResponse(res);
-
-                if (typeof data === "string") {
-                    throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
-                }
-
-                const balance =
-                    data?.money ??
-                    data?.balance ??
-                    data?.amount ??
-                    data?.credit ??
-                    data?.wallet;
-
+                if (typeof data === "string") throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
+                const balance = data?.money ?? data?.balance ?? data?.amount ?? data?.credit ?? data?.wallet;
                 if (balance !== undefined && balance !== null && balance !== "") {
                     show.textContent = "฿ " + formatMoney(balance);
                     setStatus("เช็คยอดเงินสำเร็จ", "success");
@@ -477,8 +326,7 @@
                 show.textContent = "เช็คยอดไม่สำเร็จ";
                 setStatus(err?.message || "เชื่อมต่อไม่ได้", "error");
             } finally {
-                btn.disabled = false;
-                btn.textContent = "กดเช็คเงิน";
+                btn.disabled = false; btn.textContent = "กดเช็คเงิน";
             }
         }
 
@@ -490,43 +338,19 @@
 
         async function getSummary() {
             if (!requireSession()) return;
-
             const dateInput = document.getElementById("summaryDate").value;
             const btn = document.getElementById("btnSummary");
             const resultArea = document.getElementById("summaryResult");
             const show = document.getElementById("totalSalesShow");
             const summaryNote = document.getElementById("summaryNote");
-
-            if (!dateInput) {
-                setStatus("กรุณาเลือกวันที่ก่อนดูยอดขาย", "error");
-                resetSummaryUI();
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = "⌛ กำลังคำนวณ...";
-            clearStatus();
-
-            resultArea.classList.remove("hidden");
-            show.textContent = "฿ ...";
-            summaryNote.textContent = "กำลังโหลดข้อมูล...";
-
+            if (!dateInput) { setStatus("กรุณาเลือกวันที่ก่อนดูยอดขาย", "error"); resetSummaryUI(); return; }
+            btn.disabled = true; btn.textContent = "⌛ กำลังคำนวณ..."; clearStatus();
+            resultArea.classList.remove("hidden"); show.textContent = "฿ ..."; summaryNote.textContent = "กำลังโหลดข้อมูล...";
             try {
-                const url = `${SUMMARY_WEBHOOK}?date=${encodeURIComponent(dateInput)}`;
-                const res = await fetch(url, { method: "GET" });
+                const res = await fetch(`${SUMMARY_WEBHOOK}?date=${encodeURIComponent(dateInput)}`, { method: "GET" });
                 const data = await parseResponse(res);
-
-                if (typeof data === "string") {
-                    throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
-                }
-
-                const totalSales =
-                    data?.sum_money ??
-                    data?.total_sales ??
-                    data?.sales ??
-                    data?.amount ??
-                    data?.total;
-
+                if (typeof data === "string") throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
+                const totalSales = data?.sum_money ?? data?.total_sales ?? data?.sales ?? data?.amount ?? data?.total;
                 if (totalSales !== undefined && totalSales !== null && totalSales !== "") {
                     show.textContent = "฿ " + formatMoney(totalSales);
                     summaryNote.textContent = "อัปเดตจากข้อมูลของวันที่เลือกแล้ว";
@@ -541,8 +365,7 @@
                 summaryNote.textContent = "ไม่สามารถโหลดข้อมูลสรุปยอดได้";
                 setStatus(err?.message || "เชื่อมต่อ Make ไม่สำเร็จ", "error");
             } finally {
-                btn.disabled = false;
-                btn.textContent = "ดูยอดขาย";
+                btn.disabled = false; btn.textContent = "ดูยอดขาย";
             }
         }
 
@@ -554,50 +377,21 @@
 
         async function getRangeReport() {
             if (!requireSession()) return;
-
             const dateFrom = document.getElementById("reportDateFrom").value;
             const dateTo = document.getElementById("reportDateTo").value;
             const btn = document.getElementById("btnRangeReport");
             const box = document.getElementById("rangeReportBox");
             const show = document.getElementById("rangeSalesShow");
             const note = document.getElementById("rangeReportNote");
-
-            if (!dateFrom || !dateTo) {
-                setStatus("กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด", "error");
-                resetRangeReportUI();
-                return;
-            }
-
-            if (dateFrom > dateTo) {
-                setStatus("วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด", "error");
-                resetRangeReportUI();
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = "⌛ กำลังประมวลผล...";
-            clearStatus();
-
-            box.classList.remove("hidden");
-            show.textContent = "฿ ...";
-            note.textContent = "กำลังโหลดข้อมูล...";
-
+            if (!dateFrom || !dateTo) { setStatus("กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด", "error"); resetRangeReportUI(); return; }
+            if (dateFrom > dateTo) { setStatus("วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด", "error"); resetRangeReportUI(); return; }
+            btn.disabled = true; btn.textContent = "⌛ กำลังประมวลผล..."; clearStatus();
+            box.classList.remove("hidden"); show.textContent = "฿ ..."; note.textContent = "กำลังโหลดข้อมูล...";
             try {
-                const url = `${SUMMARY_WEBHOOK}?date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`;
-                const res = await fetch(url, { method: "GET" });
+                const res = await fetch(`${SUMMARY_WEBHOOK}?date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`, { method: "GET" });
                 const data = await parseResponse(res);
-
-                if (typeof data === "string") {
-                    throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
-                }
-
-                const totalSales =
-                    data?.sum_money ??
-                    data?.total_sales ??
-                    data?.sales ??
-                    data?.amount ??
-                    data?.total;
-
+                if (typeof data === "string") throw new Error(data || "รูปแบบข้อมูลจาก Make ไม่ถูกต้อง");
+                const totalSales = data?.sum_money ?? data?.total_sales ?? data?.sales ?? data?.amount ?? data?.total;
                 if (totalSales !== undefined && totalSales !== null && totalSales !== "") {
                     show.textContent = "฿ " + formatMoney(totalSales);
                     note.textContent = `สรุปยอดช่วงวันที่ ${dateFrom} ถึง ${dateTo}`;
@@ -612,56 +406,35 @@
                 note.textContent = "ไม่สามารถโหลดรายงานช่วงวันที่ได้";
                 setStatus(err?.message || "เชื่อมต่อ Make ไม่สำเร็จ", "error");
             } finally {
-                btn.disabled = false;
-                btn.textContent = "ดูรายงานช่วงวันที่";
+                btn.disabled = false; btn.textContent = "ดูรายงานช่วงวันที่";
             }
         }
 
         async function loadServices() {
             const serviceSelect = document.getElementById("service");
             if (!serviceSelect) return;
-
             try {
                 serviceSelect.innerHTML = '<option value="">-- กำลังโหลดบริการ... --</option>';
-
                 const response = await fetch(SERVICES_CSV_URL, { cache: "no-store" });
-                if (!response.ok) {
-                    throw new Error("โหลดข้อมูลบริการไม่สำเร็จ");
-                }
-
-                const csvText = await response.text();
-                const rows = parseCSV(csvText);
-
-                if (!rows.length || rows.length === 1) {
-                    throw new Error("ไม่พบข้อมูลบริการ");
-                }
-
-                const dataRows = rows.slice(1);
-                const seen = new Set();
-
+                if (!response.ok) throw new Error("โหลดข้อมูลบริการไม่สำเร็จ");
+                const rows = parseCSV(await response.text());
+                if (!rows.length || rows.length === 1) throw new Error("ไม่พบข้อมูลบริการ");
+                const dataRows = rows.slice(1), seen = new Set();
                 serviceSelect.innerHTML = '<option value="">-- เลือกบริการ --</option>';
-
                 dataRows.forEach(cols => {
                     const platform = String(cols[1] || "").trim();
-                    const serviceName = String(cols[2] || "").trim();
+                    const category = String(cols[2] || "").trim();
                     const serviceId24 = String(cols[6] || "").trim();
-
-                    if (!platform || !serviceName || !serviceId24) return;
-                    if (seen.has(serviceId24)) return;
-
+                    const serviceName = String(cols[7] || "").trim();
+                    if (!platform || !serviceName || !serviceId24 || seen.has(serviceId24)) return;
                     seen.add(serviceId24);
-
                     const option = document.createElement("option");
                     option.value = serviceId24;
-                    option.textContent = `${platform} - ${serviceName} (${serviceId24})`;
+                    option.textContent = `${platform} - ${serviceName}${category ? ` [${category}]` : ""} (${serviceId24})`;
                     serviceSelect.appendChild(option);
                 });
-
                 servicesLoaded = true;
-
-                if (serviceSelect.options.length <= 1) {
-                    setStatus("ไม่พบบริการในชีต", "error");
-                }
+                if (serviceSelect.options.length <= 1) setStatus("ไม่พบบริการในชีต", "error");
             } catch (err) {
                 serviceSelect.innerHTML = '<option value="">-- โหลดบริการไม่สำเร็จ --</option>';
                 setStatus("โหลดรายการบริการไม่สำเร็จ: " + (err.message || err), "error");
@@ -675,33 +448,22 @@
             const link = getTrimmedValue("link");
             const operator = getTrimmedValue("operator");
             const adminNote = getTrimmedValue("adminNote");
-
             if (!orderID || orderID.length < 4) return "กรุณากรอกรหัสออเดอร์ให้ถูกต้อง";
             if (!service) return "กรุณาเลือกบริการ";
             if (!isPositiveInteger(qty)) return "จำนวนต้องเป็นจำนวนเต็มที่มากกว่า 0";
             if (!isValidHttpUrl(link)) return "กรุณากรอกลิงก์งานให้ถูกต้อง";
             if (!operator) return "กรุณากรอกชื่อผู้ดำเนินการ";
             if (!adminNote) return "กรุณากรอกเหตุผลที่ override";
-
             return "";
         }
 
         async function submitOverrideForm(e) {
             e.preventDefault();
-
             if (!requireSession()) return;
-
             const validationError = validateOverrideForm();
-            if (validationError) {
-                setStatus(validationError, "error");
-                return;
-            }
-
+            if (validationError) return setStatus(validationError, "error");
             const btn = document.getElementById("submitBtn");
-            btn.disabled = true;
-            btn.textContent = "⌛ กำลังส่งข้อมูล...";
-            clearStatus();
-
+            btn.disabled = true; btn.textContent = "⌛ กำลังส่งข้อมูล..."; clearStatus();
             const payload = {
                 admin_secret: THE_KEY,
                 orderID: getTrimmedValue("orderID"),
@@ -713,16 +475,13 @@
                 method: "admin_manual",
                 requested_at: new Date().toISOString()
             };
-
             try {
                 const res = await fetch(MANUAL_OVERRIDE_WEBHOOK, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
                 });
-
                 const data = await parseResponse(res);
-
                 if (typeof data === "string") {
                     const lower = data.toLowerCase();
                     if (data === "OK" || lower === "success") {
@@ -732,15 +491,8 @@
                     }
                     throw new Error(data || "ระบบตอบกลับไม่ถูกต้อง");
                 }
-
-                const success =
-                    data?.success === true ||
-                    data?.status === "success" ||
-                    data?.status === "SUCCESS" ||
-                    data?.status === "OK";
-
+                const success = data?.success === true || data?.status === "success" || data?.status === "SUCCESS" || data?.status === "OK";
                 const message = data?.message || data?.detail || data?.error || "";
-
                 if (success) {
                     setStatus(message || "ส่งคำสั่งแมนนวลเรียบร้อย", "success");
                     document.getElementById("adminForm").reset();
@@ -750,19 +502,16 @@
             } catch (err) {
                 setStatus(err?.message || "ส่งคำสั่งไม่สำเร็จ", "error");
             } finally {
-                btn.disabled = false;
-                btn.textContent = "ยืนยันการสั่งงาน";
+                btn.disabled = false; btn.textContent = "ยืนยันการสั่งงาน";
             }
         }
 
         async function loadOrders() {
             if (!requireSession()) return;
-
             const loading = document.getElementById("ordersLoading");
             const empty = document.getElementById("ordersEmpty");
             const list = document.getElementById("ordersList");
             const btn = document.getElementById("btnReloadOrders");
-
             btn.disabled = true;
             loading.classList.remove("hidden");
             empty.classList.add("hidden");
@@ -771,21 +520,14 @@
 
             try {
                 const response = await fetch(ORDERS_CSV_URL, { cache: "no-store" });
-                if (!response.ok) {
-                    throw new Error("โหลดข้อมูลออเดอร์ไม่สำเร็จ");
-                }
-
-                const csvText = await response.text();
-                const rows = parseCSV(csvText);
-
+                if (!response.ok) throw new Error("โหลดข้อมูลออเดอร์ไม่สำเร็จ");
+                const rows = parseCSV(await response.text());
                 if (!rows.length || rows.length <= 1) {
                     empty.classList.remove("hidden");
                     ordersLoaded = true;
                     return;
                 }
-
                 const dataRows = rows.slice(1).reverse().slice(0, 20);
-
                 if (dataRows.length === 0) {
                     empty.classList.remove("hidden");
                     ordersLoaded = true;
@@ -793,50 +535,112 @@
                 }
 
                 dataRows.forEach(cols => {
-                    const createdAt = String(cols[0] || "-").trim();       // A = Date/Time
-                    const customerName = String(cols[1] || "-").trim();    // B = Customer Name
-                    const platform = String(cols[2] || "-").trim();        // C = Platform
-                    const serviceName = String(cols[3] || "-").trim();     // D = Service Name
-                    const qty = String(cols[4] || "0").trim();             // E = Quantity
-                    const price = String(cols[5] || "0").trim();           // F = Total Price
-                    const link = String(cols[6] || "").trim();             // G = Link (URL)
-                    const serviceId = String(cols[7] || "N/A").trim();     // H = Service ID
-                    const orderId = String(cols[12] || "N/A").trim();      // M = Order ID
+                    const createdAt = String(cols[0] || "-").trim();
+                    const customerName = String(cols[1] || "-").trim();
+                    const platform = String(cols[2] || "-").trim();
+                    const category = String(cols[3] || "-").trim();
+                    const qty = String(cols[4] || "0").trim();
+                    const price = String(cols[5] || "0").trim();
+                    const link = String(cols[6] || "").trim();
+                    const serviceId = String(cols[7] || "N/A").trim();
+                    const userId = String(cols[8] || "-").trim();
+                    const slipStatus = String(cols[9] || "-").trim();
+                    const localId = String(cols[10] || "-").trim();
+                    const orderStatus = String(cols[11] || "-").trim();
+                    const orderId = String(cols[12] || "N/A").trim();
+                    const smmStatus = String(cols[13] || "-").trim();
+                    const dateOnly = String(cols[14] || "-").trim();
+                    const serviceName = String(cols[15] || "-").trim();
+                    const paymentMethod = String(cols[16] || "-").trim();
+                    const paymentGateway = String(cols[17] || "-").trim();
+                    const paymentRef = String(cols[18] || "-").trim();
+                    const paymentUrl = String(cols[19] || "").trim();
+                    const paidAt = String(cols[20] || "-").trim();
+                    const amountPaid = String(cols[21] || "0").trim();
+
+                    const slipLower = slipStatus.toLowerCase();
+                    const slipBadge = createBadge(
+                        slipStatus || "-",
+                        slipLower.includes("approved") ? "bg-emerald-600" : slipLower.includes("pending") ? "bg-amber-500" : "bg-slate-700",
+                        slipLower.includes("pending") ? "text-slate-900" : "text-white"
+                    );
 
                     const card = document.createElement("div");
-                    card.className = "bg-slate-800 border border-slate-700 rounded-xl p-3";
+                    card.className = "bg-slate-800 border border-slate-700 rounded-xl p-4";
+                    card.innerHTML = `
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="font-bold text-white break-words">${platform} - ${serviceName}</p>
+                                <p class="text-xs text-slate-400 mt-1">Order ID: ${orderId}</p>
+                                <p class="text-xs text-slate-400 mt-1">ลูกค้า: ${customerName} | User ID: ${userId}</p>
+                            </div>
+                            <div class="flex flex-col gap-2 items-end text-right shrink-0">
+                                ${getOrderStatusBadge(orderStatus)}
+                                ${getOrderStatusBadge(smmStatus)}
+                            </div>
+                        </div>
 
-                    const title = document.createElement("p");
-                    title.className = "font-bold text-white";
-                    title.textContent = `${platform} - ${serviceName}`;
+                        <div class="grid grid-cols-2 gap-2 mt-4 text-sm">
+                            <div class="bg-slate-900 rounded-xl p-3 border border-slate-700">
+                                <p class="text-slate-400 text-xs">Category</p>
+                                <p class="text-white font-semibold break-words">${category || "-"}</p>
+                            </div>
+                            <div class="bg-slate-900 rounded-xl p-3 border border-slate-700">
+                                <p class="text-slate-400 text-xs">Service ID</p>
+                                <p class="text-white font-semibold break-words">${serviceId}</p>
+                            </div>
+                            <div class="bg-slate-900 rounded-xl p-3 border border-slate-700">
+                                <p class="text-slate-400 text-xs">Quantity</p>
+                                <p class="text-white font-semibold">${qty}</p>
+                            </div>
+                            <div class="bg-slate-900 rounded-xl p-3 border border-slate-700">
+                                <p class="text-slate-400 text-xs">Total Price</p>
+                                <p class="text-yellow-400 font-semibold">฿ ${formatMoney(price)}</p>
+                            </div>
+                        </div>
 
-                    const meta = document.createElement("p");
-                    meta.className = "text-sm text-slate-400 mt-1";
-                    meta.textContent = `Order ID: ${orderId} | ลูกค้า: ${customerName}`;
-
-                    const sub = document.createElement("p");
-                    sub.className = "text-sm text-slate-400 mt-1";
-                    sub.textContent = `Qty: ${qty} | Price: ฿${formatMoney(price)} | Service ID: ${serviceId}`;
-
-                    const time = document.createElement("p");
-                    time.className = "text-xs text-slate-500 mt-2";
-                    time.textContent = createdAt;
-
-                    card.appendChild(title);
-                    card.appendChild(meta);
-                    card.appendChild(sub);
+                        <div class="mt-4 space-y-2 text-sm">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="text-slate-400">การชำระ:</span>
+                                ${getPaymentBadge(paymentMethod, paymentGateway)}
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="text-slate-400">Slip Status:</span>
+                                ${slipBadge}
+                            </div>
+                            <p class="text-slate-400">Payment Ref: <span class="text-white break-all">${paymentRef || "-"}</span></p>
+                            <p class="text-slate-400">Paid At: <span class="text-white">${paidAt || "-"}</span></p>
+                            <p class="text-slate-400">Amount Paid: <span class="text-green-400">${amountPaid && amountPaid !== "-" ? "฿ " + formatMoney(amountPaid) : "-"}</span></p>
+                            <p class="text-slate-400">Local ID: <span class="text-white">${localId || "-"}</span></p>
+                            <p class="text-slate-400">Date Only: <span class="text-white">${dateOnly || "-"}</span></p>
+                        </div>
+                    `;
 
                     if (link) {
                         const linkEl = document.createElement("a");
                         linkEl.href = link;
                         linkEl.target = "_blank";
                         linkEl.rel = "noopener noreferrer";
-                        linkEl.className = "text-xs text-blue-400 underline break-all block mt-2";
+                        linkEl.className = "text-xs text-blue-400 underline break-all block mt-3";
                         linkEl.textContent = link;
                         card.appendChild(linkEl);
                     }
 
+                    if (paymentUrl) {
+                        const paymentLinkEl = document.createElement("a");
+                        paymentLinkEl.href = paymentUrl;
+                        paymentLinkEl.target = "_blank";
+                        paymentLinkEl.rel = "noopener noreferrer";
+                        paymentLinkEl.className = "text-xs text-cyan-400 underline break-all block mt-2";
+                        paymentLinkEl.textContent = "เปิดลิงก์ชำระเงิน";
+                        card.appendChild(paymentLinkEl);
+                    }
+
+                    const time = document.createElement("p");
+                    time.className = "text-xs text-slate-500 mt-3";
+                    time.textContent = createdAt;
                     card.appendChild(time);
+
                     list.appendChild(card);
                 });
 
@@ -852,26 +656,11 @@
         }
 
         document.getElementById("adminForm").addEventListener("submit", submitOverrideForm);
-
         document.getElementById("passInput").addEventListener("keydown", function(e) {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                login();
-            }
+            if (e.key === "Enter") { e.preventDefault(); login(); }
         });
 
-        [
-            "passInput",
-            "summaryDate",
-            "reportDateFrom",
-            "reportDateTo",
-            "orderID",
-            "service",
-            "qty",
-            "link",
-            "operator",
-            "adminNote"
-        ].forEach(id => {
+        ["passInput","summaryDate","reportDateFrom","reportDateTo","orderID","service","qty","link","operator","adminNote"].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener("input", clearStatus);
