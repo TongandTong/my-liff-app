@@ -142,29 +142,55 @@
         async function loadSheetData() {
             try {
                 const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
-                if (!response.ok) throw new Error("ไม่สามารถโหลดข้อมูลบริการได้ (" + response.status + ")");
+                if (!response.ok) {
+                    throw new Error("ไม่สามารถโหลดข้อมูลบริการได้ (" + response.status + ")");
+                }
 
                 const text = await response.text();
                 const rows = parseCSV(text);
-                if (!rows.length || rows.length === 1) throw new Error("ไม่พบข้อมูลบริการใน Google Sheet");
+
+                if (!rows.length || rows.length === 1) {
+                    throw new Error("ไม่พบข้อมูลบริการใน Google Sheet");
+                }
 
                 const dataRows = rows.slice(1);
-                allServices = dataRows.map(cols => ({
-                    id: String(cols[0] || "").trim(),
-                    platform: String(cols[1] || "").trim(),
-                    category: String(cols[2] || "").trim() || "ทั่วไป",
-                    min: parseInt(cols[3], 10) || 0,
-                    max: parseInt(cols[4], 10) || 0,
-                    price: parseFloat(cols[5]) || 0,
-                    id_24social: String(cols[6] || "").trim(),
-                    name: String(cols[7] || "").trim()
-                })).filter(s => s.id && s.platform && s.name);
+
+                allServices = dataRows.map(cols => {
+                    const pricingMode = String(cols[9] || "").trim().toLowerCase() || "auto";   // J = Pricing_Mode
+                    const manualSellPrice = parseFloat(cols[11]) || 0;                           // L = Manual_Sell_Price
+                    const basePrice = parseFloat(cols[5]) || 0;                                  // F = Price_Per_1
+                    const finalPrice = pricingMode === "manual" && manualSellPrice > 0
+                        ? manualSellPrice
+                        : basePrice;
+
+                    return {
+                        id: String(cols[0] || "").trim(),                   // A = ID
+                        platform: String(cols[1] || "").trim(),             // B = Platform
+                        category: String(cols[2] || "").trim() || "ทั่วไป", // C = Category
+                        min: parseInt(cols[3], 10) || 0,                    // D = Min_Qty
+                        max: parseInt(cols[4], 10) || 0,                    // E = Max_Qty
+                        price: finalPrice,                                  // ราคาที่ใช้จริง
+                        raw_price: basePrice,                               // ราคาเดิม
+                        pricing_mode: pricingMode,                          // J = Pricing_Mode
+                        default_provider: String(cols[10] || "").trim(),    // K = Default_Provider
+                        manual_sell_price: manualSellPrice,                 // L = Manual_Sell_Price
+                        status: String(cols[8] || "").trim().toLowerCase(), // I = Status
+                        id_24social: String(cols[6] || "").trim(),          // G = ID_SMM
+                        name: String(cols[7] || "").trim()                  // H = Service Name
+                    };
+                }).filter(s => s.id && s.platform && s.name && s.status === "active");
 
                 const platforms = [...new Set(allServices.map(s => s.platform))];
                 const pSelect = document.getElementById("platformSelect");
+
+                if (!pSelect) return;
+
                 pSelect.innerHTML = "";
                 appendOption(pSelect, "", "-- เลือก Platform --");
-                platforms.forEach(platform => appendOption(pSelect, platform, platform));
+
+                platforms.forEach(platform => {
+                    appendOption(pSelect, platform, platform);
+                });
 
                 resetCategorySelect();
                 resetServiceSelect();
@@ -426,6 +452,8 @@
                 quantity: qty,
                 link: link,
                 unit_price: service.price,
+                pricing_mode: service.pricing_mode,
+                default_provider: service.default_provider,
                 total_price: total.toFixed(2),
                 payment_method: selectedPaymentMethod
             };
