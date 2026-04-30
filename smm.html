@@ -128,6 +128,13 @@
             try {
                 await liff.init({ liffId: LIFF_ID });
 
+                // เปิดนอก LINE / เปิดจาก browser ปกติ: ให้โหลดข้อมูลได้ ไม่บังคับ login
+                if (!liff.isInClient() && !liff.isLoggedIn()) {
+                    await loadSheetData();
+                    return;
+                }
+
+                // เปิดใน LINE LIFF: ถ้ายังไม่ login ให้ login ก่อน
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
@@ -135,7 +142,15 @@
 
                 await loadSheetData();
             } catch (err) {
-                alert("❌ LIFF Error: " + getErrorMessage(err));
+                console.warn("LIFF init failed:", err);
+
+                // กันหน้าเว็บพัง: ถ้า LIFF มีปัญหา ยังให้ทดสอบหน้าเว็บและโหลดบริการได้
+                try {
+                    await loadSheetData();
+                    alert("⚠️ เปิดหน้าเว็บได้ แต่ LIFF ยังไม่พร้อม: " + getErrorMessage(err));
+                } catch (loadErr) {
+                    alert("❌ โหลดข้อมูลพลาด: " + getErrorMessage(loadErr));
+                }
             }
         }
 
@@ -435,14 +450,26 @@
         }
 
         async function buildBasePayload() {
-            const profile = await liff.getProfile();
+            let profile = {
+                displayName: "Guest",
+                userId: "guest_" + Date.now()
+            };
+
+            try {
+                if (typeof liff !== "undefined" && liff.isLoggedIn()) {
+                    profile = await liff.getProfile();
+                }
+            } catch (e) {
+                console.warn("Cannot get LIFF profile:", e);
+            }
+
             const service = getSelectedService();
             const qty = Number(document.getElementById("quantity").value || 0);
             const link = (document.getElementById("targetLink").value || "").trim();
             const total = getTotalPriceNumber();
 
             return {
-                customer_name: profile.displayName || "",
+                customer_name: profile.displayName || "Guest",
                 userId: profile.userId || "",
                 platform: service.platform,
                 category: service.category || "ทั่วไป",
