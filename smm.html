@@ -136,10 +136,9 @@
 
                 // เปิดใน LINE LIFF: ถ้ายังไม่ login ให้ login ก่อน
                 if (!liff.isLoggedIn()) {
-                    liff.login();
-                    return;
-                }
-
+    liff.login({ redirectUri: window.location.href });
+    return;
+}
                 await loadSheetData();
             } catch (err) {
                 console.warn("LIFF init failed:", err);
