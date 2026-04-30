@@ -37,10 +37,25 @@
 
             <div class="mb-4">
                 <label class="block text-gray-700">เลือกบริการ</label>
-                <select id="serviceSelect" onchange="updateMinMax()" disabled class="w-full border rounded-lg p-2 mt-1 bg-gray-50">
+                <select id="serviceSelect" onchange="updateSelectedServiceUI()" disabled class="w-full border rounded-lg p-2 mt-1 bg-gray-50">
                     <option value="">-- เลือกหมวดหมู่ก่อน --</option>
                 </select>
                 <p id="limitNote" class="text-xs text-blue-500 mt-1"></p>
+            </div>
+
+            <div id="serviceDetailBox" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 text-sm">
+                <p class="font-bold text-slate-800 mb-1">รายละเอียดบริการ</p>
+                <p id="serviceDescription" class="text-slate-600"></p>
+                <div id="serviceLinkHelp" class="hidden mt-3 bg-white rounded-lg border border-slate-200 p-3">
+                    <p id="serviceInputHint" class="text-slate-700"></p>
+                    <p id="serviceLinkExample" class="text-xs text-blue-600 mt-1 break-all"></p>
+                </div>
+            </div>
+
+            <div id="commentsBox" class="hidden mb-4">
+                <label class="block text-gray-700">คอมเมนต์ที่ต้องการ</label>
+                <textarea id="customComments" oninput="syncQuantityFromComments()" class="w-full border rounded-lg p-2 mt-1 min-h-[120px]" placeholder="ใส่คอมเมนต์ 1 บรรทัดต่อ 1 คอมเมนต์&#10;ตัวอย่าง: สินค้าดีมาก&#10;บริการดี แนะนำเลย"></textarea>
+                <p id="commentsNote" class="text-xs text-slate-500 mt-1">สำหรับบริการคอมเมนต์: 1 บรรทัด = 1 คอมเมนต์ และระบบจะนับจำนวนให้อัตโนมัติ</p>
             </div>
 
             <div class="mb-4">
@@ -136,9 +151,10 @@
 
                 // เปิดใน LINE LIFF: ถ้ายังไม่ login ให้ login ก่อน
                 if (!liff.isLoggedIn()) {
-    liff.login({ redirectUri: window.location.href });
-    return;
-}
+                    liff.login();
+                    return;
+                }
+
                 await loadSheetData();
             } catch (err) {
                 console.warn("LIFF init failed:", err);
@@ -167,30 +183,46 @@
                     throw new Error("ไม่พบข้อมูลบริการใน Google Sheet");
                 }
 
+                const headers = rows[0].map(h => String(h || "").trim());
                 const dataRows = rows.slice(1);
 
+                function col(cols, names, fallbackIndex = -1) {
+                    const list = Array.isArray(names) ? names : [names];
+                    for (const name of list) {
+                        const idx = headers.findIndex(h => h.toLowerCase() === String(name).toLowerCase());
+                        if (idx >= 0) return String(cols[idx] || "").trim();
+                    }
+                    return fallbackIndex >= 0 ? String(cols[fallbackIndex] || "").trim() : "";
+                }
+
                 allServices = dataRows.map(cols => {
-                    const pricingMode = String(cols[9] || "").trim().toLowerCase() || "auto";   // J = Pricing_Mode
-                    const manualSellPrice = parseFloat(cols[11]) || 0;                           // L = Manual_Sell_Price
-                    const basePrice = parseFloat(cols[5]) || 0;                                  // F = Price_Per_1
+                    const pricingMode = (col(cols, "Pricing_Mode", 9).toLowerCase() || "auto");
+                    const manualSellPrice = parseFloat(col(cols, "Manual_Sell_Price", 11)) || 0;
+                    const basePrice = parseFloat(col(cols, ["Price_Per_1", "price_per_1"], 5)) || 0;
                     const finalPrice = pricingMode === "manual" && manualSellPrice > 0
                         ? manualSellPrice
                         : basePrice;
+                    const requiresCommentsRaw = col(cols, "Requires_Comments").toLowerCase();
 
                     return {
-                        id: String(cols[0] || "").trim(),                   // A = ID
-                        platform: String(cols[1] || "").trim(),             // B = Platform
-                        category: String(cols[2] || "").trim() || "ทั่วไป", // C = Category
-                        min: parseInt(cols[3], 10) || 0,                    // D = Min_Qty
-                        max: parseInt(cols[4], 10) || 0,                    // E = Max_Qty
-                        price: finalPrice,                                  // ราคาที่ใช้จริง
-                        raw_price: basePrice,                               // ราคาเดิม
-                        pricing_mode: pricingMode,                          // J = Pricing_Mode
-                        default_provider: String(cols[10] || "").trim(),    // K = Default_Provider
-                        manual_sell_price: manualSellPrice,                 // L = Manual_Sell_Price
-                        status: String(cols[8] || "").trim().toLowerCase(), // I = Status
-                        id_24social: String(cols[6] || "").trim(),          // G = ID_SMM
-                        name: String(cols[7] || "").trim()                  // H = Service Name
+                        id: col(cols, ["ID", "Service_ID", "Local_Service_ID"], 0),
+                        platform: col(cols, "Platform", 1),
+                        category: col(cols, ["Category", "Service_Category"], 2) || "ทั่วไป",
+                        min: parseInt(col(cols, "Min_Qty", 3), 10) || 0,
+                        max: parseInt(col(cols, "Max_Qty", 4), 10) || 0,
+                        price: finalPrice,
+                        raw_price: basePrice,
+                        pricing_mode: pricingMode,
+                        default_provider: col(cols, "Default_Provider", 10),
+                        manual_sell_price: manualSellPrice,
+                        status: col(cols, "Status", 8).toLowerCase(),
+                        id_24social: col(cols, ["ID_SMM", "ID_24Social", "Provider_Service_ID"], 6),
+                        name: col(cols, ["Service Name", "Service_Name", "Name"], 7),
+                        requires_comments: ["true", "yes", "y", "1"].includes(requiresCommentsRaw),
+                        description: col(cols, ["Service_Description", "Description", "Notes"]),
+                        input_hint: col(cols, ["Input_Hint", "Link_Hint"]),
+                        link_example: col(cols, "Link_Example"),
+                        allowed_domains: col(cols, "Allowed_Domains")
                     };
                 }).filter(s => s.id && s.platform && s.name && s.status === "active");
 
@@ -267,6 +299,12 @@
         function clearOrderInfo() {
             document.getElementById("limitNote").textContent = "";
             document.getElementById("quantity").value = "";
+            const detailBox = document.getElementById("serviceDetailBox");
+            const commentsBox = document.getElementById("commentsBox");
+            const customComments = document.getElementById("customComments");
+            if (detailBox) detailBox.classList.add("hidden");
+            if (commentsBox) commentsBox.classList.add("hidden");
+            if (customComments) customComments.value = "";
             setMoney("totalPrice", 0);
             setMoney("finalAmount", 0);
             updatePaymentMethodUI();
@@ -307,11 +345,72 @@
             sSelect.disabled = false;
         }
 
-        function updateMinMax() {
+        function updateSelectedServiceUI() {
             const service = getSelectedService();
             const limitNote = document.getElementById("limitNote");
+            const detailBox = document.getElementById("serviceDetailBox");
+            const description = document.getElementById("serviceDescription");
+            const linkHelp = document.getElementById("serviceLinkHelp");
+            const inputHint = document.getElementById("serviceInputHint");
+            const linkExample = document.getElementById("serviceLinkExample");
+            const commentsBox = document.getElementById("commentsBox");
+            const customComments = document.getElementById("customComments");
+            const qty = document.getElementById("quantity");
+
             limitNote.textContent = service ? `💡 ขั้นต่ำ: ${service.min.toLocaleString()} | สูงสุด: ${service.max.toLocaleString()}` : "";
+
+            if (service) {
+                detailBox.classList.remove("hidden");
+                description.textContent = service.description || "บริการนี้จะเริ่มดำเนินการหลังชำระเงินสำเร็จ กรุณาใส่ลิงก์ให้ถูกต้องและเปิดเป็นสาธารณะ";
+                const hasLinkHelp = Boolean(service.input_hint || service.link_example || service.allowed_domains);
+                linkHelp.classList.toggle("hidden", !hasLinkHelp);
+                inputHint.textContent = service.input_hint || (service.allowed_domains ? `ลิงก์ต้องอยู่ในโดเมน: ${service.allowed_domains}` : "");
+                linkExample.textContent = service.link_example ? `ตัวอย่าง: ${service.link_example}` : "";
+
+                commentsBox.classList.toggle("hidden", !service.requires_comments);
+                qty.readOnly = service.requires_comments;
+                qty.classList.toggle("bg-gray-100", service.requires_comments);
+                if (!service.requires_comments && customComments) customComments.value = "";
+                if (service.requires_comments) syncQuantityFromComments();
+            } else {
+                detailBox.classList.add("hidden");
+                commentsBox.classList.add("hidden");
+                if (customComments) customComments.value = "";
+                qty.readOnly = false;
+                qty.classList.remove("bg-gray-100");
+            }
+
             calculatePrice();
+        }
+
+        function getCommentLines() {
+            const value = (document.getElementById("customComments")?.value || "").trim();
+            if (!value) return [];
+            return value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        }
+
+        function syncQuantityFromComments() {
+            const service = getSelectedService();
+            if (!service || !service.requires_comments) return;
+            const lines = getCommentLines();
+            document.getElementById("quantity").value = lines.length ? String(lines.length) : "";
+            calculatePrice();
+        }
+
+        function isLinkAllowedForService(link, service) {
+            if (!service || !service.allowed_domains) return true;
+            try {
+                const parsed = new URL(link);
+                const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
+                const domains = service.allowed_domains
+                    .split(",")
+                    .map(d => d.trim().replace(/^www\./, "").toLowerCase())
+                    .filter(Boolean);
+                if (!domains.length) return true;
+                return domains.some(domain => host === domain || host.endsWith("." + domain));
+            } catch (_) {
+                return false;
+            }
         }
 
         function calculatePrice() {
@@ -366,6 +465,14 @@
             if (qty > service.max) return { ok: false, message: `จำนวนเกินกว่าขั้นสูงสุดที่กำหนด (${service.max.toLocaleString()})` };
             if (!link) return { ok: false, message: "กรุณากรอกลิงก์งาน" };
             if (!isValidHttpUrl(link)) return { ok: false, message: "กรุณากรอกลิงก์ให้ถูกต้อง" };
+            if (!isLinkAllowedForService(link, service)) {
+                return { ok: false, message: `ลิงก์ไม่ตรงกับบริการที่เลือก กรุณาใช้ลิงก์ตามที่ระบบแนะนำ${service.allowed_domains ? " (" + service.allowed_domains + ")" : ""}` };
+            }
+            if (service.requires_comments) {
+                const commentLines = getCommentLines();
+                if (!commentLines.length) return { ok: false, message: "กรุณาใส่คอมเมนต์อย่างน้อย 1 บรรทัด" };
+                if (commentLines.length !== qty) return { ok: false, message: "จำนวนต้องเท่ากับจำนวนบรรทัดคอมเมนต์" };
+            }
             return { ok: true };
         }
 
@@ -477,6 +584,10 @@
                 local_service_id: service.id,
                 quantity: qty,
                 link: link,
+                requires_comments: service.requires_comments,
+                custom_comments: service.requires_comments ? getCommentLines().join("\n") : "",
+                allowed_domains: service.allowed_domains || "",
+                service_description: service.description || "",
                 unit_price: service.price,
                 pricing_mode: service.pricing_mode,
                 default_provider: service.default_provider,
