@@ -38,33 +38,23 @@
 
     <script>
         const LIFF_ID = "2009857155-P69Z9Mo9";
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1a5vOZQV591jVJKoOXByjQvZBeB1IUEREr8qFSHsWsE0/export?format=csv&t=" + Date.now();
 
-        /**
-         * แก้ตรงนี้จุดเดียว ถ้าคอลัมน์ในชีตเปลี่ยน
-         * นับจาก 0
-         */
-        const COL = {
-            timestamp: 0,
-            userId: 8,
-            platform: 2,
-            service: 3,
-            qty: 4,
-            price: 5,
-            status: 13,
-            orderId: 7
-        };
+        // ========================================================
+        // แก้ค่านี้หลัง Deploy Apps Script แล้ว
+        // ไปที่ Apps Script → Deploy → New Deployment → Web App
+        // Copy URL มาวางตรงนี้
+        // ========================================================
+        const API_URL = "https://script.google.com/macros/s/AKfycbxTlh91kofH_nwi1g0Bn5iDP4iYTODccCBbJc647_unsCzvrMXFFca7TVh0spwvEpk/exec";
 
         async function init() {
             resetView();
-
             try {
                 await liff.init({ liffId: LIFF_ID });
 
                 if (!liff.isLoggedIn()) {
-    liff.login({ redirectUri: window.location.href });
-    return;
-}
+                    liff.login({ redirectUri: window.location.href });
+                    return;
+                }
 
                 const profile = await liff.getProfile();
                 await fetchData(profile.userId);
@@ -74,109 +64,56 @@
         }
 
         function resetView() {
-            const loading = document.getElementById("loading");
-            const orderList = document.getElementById("orderList");
+            const loading      = document.getElementById("loading");
+            const orderList    = document.getElementById("orderList");
             const emptyMessage = document.getElementById("emptyMessage");
             const errorMessage = document.getElementById("errorMessage");
 
-            if (loading) loading.style.display = "block";
-            if (orderList) orderList.innerHTML = "";
-            if (emptyMessage) emptyMessage.style.display = "none";
-            if (errorMessage) errorMessage.style.display = "none";
+            if (loading)      loading.style.display      = "block";
+            if (orderList)    orderList.innerHTML         = "";
+            if (emptyMessage) emptyMessage.style.display  = "none";
+            if (errorMessage) errorMessage.style.display  = "none";
         }
 
         async function fetchData(myUserId) {
             try {
-                // --- ส่วนที่กูเพิ่มให้: ดึงเลข OrderID จากลิงก์ ---
-                const urlParams = new URLSearchParams(window.location.search);
-                const targetOrderId = urlParams.get('orderID'); 
-                // -------------------------------------------
+                const urlParams    = new URLSearchParams(window.location.search);
+                const targetOrderId = urlParams.get("orderID") || "";
 
-                const response = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+                // สร้าง URL ที่ส่ง userId ไปหา Apps Script
+                // Apps Script จะ filter ฝั่ง server แล้ว return เฉพาะของ user นั้น
+                const params = new URLSearchParams({ userId: myUserId });
+                if (targetOrderId) params.set("orderId", targetOrderId);
+
+                const response = await fetch(`${API_URL}?${params.toString()}`, {
+                    method: "GET",
+                    redirect: "follow"
+                });
+
                 if (!response.ok) {
                     throw new Error("โหลดข้อมูลไม่สำเร็จ (" + response.status + ")");
                 }
 
-                const csvText = await response.text();
-                const rows = parseCSV(csvText);
+                const json = await response.json();
 
-                if (!rows || rows.length <= 1) {
-                    hideLoading();
-                    showEmpty();
-                    return;
+                if (json.error) {
+                    throw new Error(json.error);
                 }
-
-                const dataRows = rows.slice(1); 
-
-                // --- แก้ไข Logic การ Filter ตรงนี้สัส ---
-                const myOrders = dataRows.filter(row => {
-                    const matchesUser = String(row[COL.userId] || "").trim() === String(myUserId).trim();
-                    
-                    // ถ้ามีออเดอร์เจาะจงมาในลิงก์ ให้โชว์แค่อันนั้น แต่ถ้าไม่มีให้โชว์ทั้งหมดของ User
-                    if (targetOrderId) {
-                        return matchesUser && String(row[COL.orderId] || "").trim() === String(targetOrderId).trim();
-                    }
-                    return matchesUser;
-                }).reverse();
-                // ---------------------------------------
 
                 hideLoading();
 
-                if (myOrders.length === 0) {
+                const orders = json.orders || [];
+                if (orders.length === 0) {
                     showEmpty();
                     return;
                 }
 
-                renderOrders(myOrders);
+                renderOrders(orders);
+
             } catch (err) {
                 hideLoading();
                 showError("เกิดข้อผิดพลาดในการโหลดข้อมูล: " + getErrorMessage(err));
             }
-        }
-
-        function parseCSV(text) {
-            const rows = [];
-            let row = [];
-            let current = "";
-            let inQuotes = false;
-
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                const next = text[i + 1];
-
-                if (char === '"') {
-                    if (inQuotes && next === '"') {
-                        current += '"';
-                        i++;
-                    } else {
-                        inQuotes = !inQuotes;
-                    }
-                } else if (char === "," && !inQuotes) {
-                    row.push(current);
-                    current = "";
-                } else if ((char === "\n" || char === "\r") && !inQuotes) {
-                    if (char === "\r" && next === "\n") i++;
-                    row.push(current);
-
-                    if (row.some(cell => String(cell).trim() !== "")) {
-                        rows.push(row);
-                    }
-
-                    row = [];
-                    current = "";
-                } else {
-                    current += char;
-                }
-            }
-
-            if (current.length > 0 || row.length > 0) {
-                row.push(current);
-                if (row.some(cell => String(cell).trim() !== "")) {
-                    rows.push(row);
-                }
-            }
-
-            return rows;
         }
 
         function renderOrders(orders) {
@@ -184,23 +121,10 @@
             if (!listContainer) return;
 
             orders.forEach(order => {
-                const orderData = normalizeOrder(order);
-                const statusInfo = formatStatus(orderData.status);
-                const card = createOrderCard(orderData, statusInfo);
+                const statusInfo = formatStatus(order.status);
+                const card = createOrderCard(order, statusInfo);
                 listContainer.appendChild(card);
             });
-        }
-
-        function normalizeOrder(order) {
-            return {
-                orderId: safeValue(order[COL.orderId], "N/A"),
-                platform: safeValue(order[COL.platform], "-"),
-                service: safeValue(order[COL.service], "-"),
-                qty: safeValue(order[COL.qty], "0"),
-                price: formatPrice(safeValue(order[COL.price], "0")),
-                status: safeValue(order[COL.status], "Pending"),
-                timestamp: safeValue(order[COL.timestamp], "-")
-            };
         }
 
         function createOrderCard(order, statusInfo) {
@@ -227,7 +151,7 @@
 
             const detail = document.createElement("p");
             detail.className = "text-sm text-slate-500 mt-1";
-            detail.textContent = "จำนวน: " + order.qty + " | ราคา: ฿" + order.price;
+            detail.textContent = "จำนวน: " + order.qty + " | ราคา: ฿" + formatPrice(order.price);
 
             const time = document.createElement("p");
             time.className = "text-[10px] text-slate-300 mt-3 italic";
@@ -247,31 +171,22 @@
             if (normalized === "completed" || normalized === "เสร็จสิ้น") {
                 return { text: "✅ งานเสร็จแล้ว", colorClass: "bg-green-100 text-green-600" };
             }
-
             if (normalized === "canceled" || normalized === "cancelled" || normalized === "ยกเลิก") {
                 return { text: "❌ ยกเลิก / คืนเงิน", colorClass: "bg-red-100 text-red-600" };
             }
-
-            if (normalized === "processing" || normalized === "pending" || normalized === "in progress" || normalized === "กำลังดำเนินการ") {
+            if (["processing", "pending", "in progress", "กำลังดำเนินการ"].includes(normalized)) {
                 return { text: "🚀 กำลังดำเนินการ", colorClass: "bg-amber-100 text-amber-600" };
             }
-
             return { text: "⏳ รอตรวจสอบ", colorClass: "bg-slate-100 text-slate-600" };
         }
 
         function formatPrice(value) {
             const number = Number(String(value).replace(/,/g, ""));
             if (!Number.isFinite(number)) return value;
-
             return number.toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
-        }
-
-        function safeValue(value, fallback = "") {
-            const text = String(value ?? "").trim();
-            return text === "" ? fallback : text;
         }
 
         function hideLoading() {
@@ -286,9 +201,8 @@
 
         function showError(message) {
             const errorMessage = document.getElementById("errorMessage");
-            const errorText = document.getElementById("errorText");
-
-            if (errorText) errorText.textContent = message || "เกิดข้อผิดพลาดในการโหลดข้อมูล";
+            const errorText    = document.getElementById("errorText");
+            if (errorText)    errorText.textContent    = message || "เกิดข้อผิดพลาดในการโหลดข้อมูล";
             if (errorMessage) errorMessage.style.display = "block";
         }
 
@@ -299,10 +213,7 @@
                     return;
                 }
             } catch (_) {}
-
-            if (window.history.length > 1) {
-                window.history.back();
-            }
+            if (window.history.length > 1) window.history.back();
         }
 
         function getErrorMessage(err) {
